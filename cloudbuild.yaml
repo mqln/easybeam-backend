@@ -2,10 +2,7 @@ steps:
   # Step 1: Build the Ktor application using Gradle
   - name: 'gcr.io/cloud-builders/gradle'
     args: ['build']
-    env: ['GRADLE_USER_HOME=/cache']
-    volumes:
-      - name: 'gradle_cache'
-        path: '/cache'
+    env: ['GRADLE_USER_HOME=/workspace/.gradle']
 
   # Step 2: Build the Docker container for the Ktor app
   - name: 'gcr.io/cloud-builders/docker'

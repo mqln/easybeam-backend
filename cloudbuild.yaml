@@ -19,9 +19,5 @@ steps:
   - name: 'gcr.io/cloud-builders/gcloud'
     args: ['run', 'deploy', 'ktor-service', '--image', 'gcr.io/$PROJECT_ID/ktor-app:latest', '--region', 'us-central1', '--platform', 'managed']
 
-volumes:
-  - name: 'gradle_cache'
-    path: '/cache'
-
 images:
   - 'gcr.io/$PROJECT_ID/ktor-app:latest'

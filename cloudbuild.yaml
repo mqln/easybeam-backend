@@ -1,20 +1,6 @@
 steps:
-  # Step 1: Set the correct permissions for the Gradle Wrapper
-  - name: 'busybox'
-    args: ['chmod', '+x', 'gradlew']
-
-  - name: 'gcr.io/cloud-builders/gradle'
-    entrypoint: './gradlew'  # Use Gradle Wrapper
-    args: ['build']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/ktor-app:latest', '.']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/ktor-app:latest']
-
+  # Deploy directly from source to Google Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'ktor-service', '--image', 'gcr.io/$PROJECT_ID/ktor-app:latest', '--region', 'us-central1', '--platform', 'managed']
+    args: ['beta', 'run', 'deploy', 'my-go-api-service', '--source', '.', '--region', 'us-central1', '--platform', 'managed']
 
-images:
-  - 'gcr.io/$PROJECT_ID/ktor-app:latest'
+timeout: '1200s' # Optional: Increase the timeout if needed, especially for larger applications

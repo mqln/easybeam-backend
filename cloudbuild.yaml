@@ -1,6 +1,6 @@
 steps:
   # Deploy directly from source to Google Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['beta', 'run', 'deploy', 'my-go-api-service', '--source', '.', '--region', 'us-central1', '--platform', 'managed']
+    args: ['beta', 'run', 'deploy', 'pollywog', '--source', '.', '--region', 'us-central1', '--platform', 'managed']
 
 timeout: '1200s' # Optional: Increase the timeout if needed, especially for larger applications

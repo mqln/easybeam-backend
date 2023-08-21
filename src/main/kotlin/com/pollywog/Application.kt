@@ -9,16 +9,15 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 
 fun main() {
-    embeddedServer(Netty, port = 8080) {
-        install(StatusPages) {
-            exception<Throwable> { call, cause ->
-                call.application.log.error("Unhandled exception caught", cause)
-                call.respondText(text = "500: $cause" , status = HttpStatusCode.InternalServerError)
-            }
-        }
-    }.start(wait = true)
+    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
 }
 fun Application.module() {
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            call.application.log.error("Unhandled exception caught", cause)
+            call.respondText(text = "500: $cause" , status = HttpStatusCode.InternalServerError)
+        }
+    }
     configureRouting()
     configureSerialization()
 }

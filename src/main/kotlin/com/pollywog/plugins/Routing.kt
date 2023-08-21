@@ -7,7 +7,9 @@ import com.pollywog.routes.*
 
 fun Application.configureRouting() {
     routing {
-        customerRouting()
+        route("/api") {
+            teamRouting()
+        }
         get("/") {
             call.respondText("Hello World!!!!!!")
         }

@@ -6,6 +6,7 @@ plugins {
     kotlin("jvm") version "1.9.0"
     id("io.ktor.plugin") version "2.3.3"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 group = "com.pollywog"
@@ -32,4 +33,19 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+}
+
+ktor {
+    docker {
+        jreVersion.set(io.ktor.plugin.features.JreVersion.JRE_17)
+    }
+}
+
+tasks.shadowJar {
+    archiveBaseName.set("pollywog")
+    archiveVersion.set("0.0.1")
+    mergeServiceFiles()
+    manifest {
+        attributes["Main-Class"] = "com.pollywog.ApplicationKt"
+    }
 }

@@ -10,24 +10,27 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.io.FileInputStream
+
 object FirebaseAdmin {
     val firestore: Firestore
-    private val logger: Logger = LoggerFactory.getLogger("FirebaseAdmin")
 
     init {
         try {
-            val credentials: GoogleCredentials = GoogleCredentials.getApplicationDefault()
-            val options: FirebaseOptions = FirebaseOptions.Builder()
-                .setCredentials(credentials)
-                .setProjectId("pollywog-ai-dev")
-                .build()
+            println("Step 1: Reading FIREBASE_SERVICE_ACCOUNT env variable")
+            val serviceAccountPath = System.getenv("FIREBASE_SERVICE_ACCOUNT_FILE")
+            println("serviceAccountPath: "+serviceAccountPath)
+            println(GoogleCredentials.fromStream(FileInputStream(serviceAccountPath)))
 
-            FirebaseApp.initializeApp(options)
-            firestore = FirestoreOptions.getDefaultInstance().service
+            firestore = FirestoreOptions.newBuilder()
+                .setCredentials(GoogleCredentials.fromStream(FileInputStream(serviceAccountPath)))
+                .build()
+                .service
+            println("success!")
         } catch (e: Exception) {
-            logger.error("Error initializing FirebaseAdmin", e)
-            // You can log the exception here and potentially set a fallback or default behavior.
-            // This is a critical error, so you might decide to rethrow the exception after logging.
+            println("Initialization error: ${e.message}")
+            e.printStackTrace()
             throw e
         }
     }
@@ -43,7 +46,9 @@ class FirestoreDatabase<D>(
 ) : Database<D> {
 
     override fun getDocument(collection: String, documentId: String): D? {
+        println("got to get doc")
         val document = firestore.collection(collection).document(documentId).get().get()
+        println("got doc")
         return if (document.exists()) {
             val dataMap = document.data as Map<String, Any>
             val jsonString = Gson().toJson(dataMap)

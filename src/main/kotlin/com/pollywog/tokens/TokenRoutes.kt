@@ -2,27 +2,17 @@ package com.pollywog.tokens
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-
-data class JWTConfig (
-    val issuer: String,
-    val audience: String,
-    val realm: String,
-    val secret: String,
-)
-fun Route.tokenRouting(config: JWTConfig) {
+fun Route.tokenRouting(tokenService: TokenService) {
     route("/token") {
         authenticate("auth-bearer") {
             post("/create") {
-                val userIdPrincipal = call.principal<UserIdPrincipal>()
-                val token = JWT.create()
-                    .withAudience(config.audience)
-                    .withIssuer(config.issuer)
-                    .withClaim("userId", userIdPrincipal!!.name)
-                    .sign(Algorithm.HMAC256(config.secret))
+                val userIdPrincipal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                val token = tokenService.createToken(userIdPrincipal.name)
                 call.respond(Token("token", token))
             }
         }

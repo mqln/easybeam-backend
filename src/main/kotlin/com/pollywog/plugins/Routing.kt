@@ -1,9 +1,11 @@
 package com.pollywog.plugins
 
+import com.pollywog.prompts.promptRouting
 import io.ktor.server.application.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import com.pollywog.routes.*
+import com.pollywog.teams.teamRouting
+import com.pollywog.tokens.JWTConfig
+import com.pollywog.tokens.tokenRouting
 
 fun Application.configureRouting() {
     val jwtConfig = environment.config.config("jwt")
@@ -16,12 +18,14 @@ fun Application.configureRouting() {
         route("/api") {
             teamRouting()
             promptRouting()
-            tokenRouting(JWTConfig(
+            tokenRouting(
+                JWTConfig(
                 issuer,
                 audience,
                 realm,
                 secret,
-            ))
+            )
+            )
         }
     }
 }

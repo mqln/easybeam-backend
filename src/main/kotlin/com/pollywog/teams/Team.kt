@@ -1,4 +1,4 @@
-package com.pollywog.models
+package com.pollywog.teams
 
 import kotlinx.serialization.Serializable
 

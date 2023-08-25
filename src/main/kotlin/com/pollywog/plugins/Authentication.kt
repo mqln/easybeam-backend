@@ -1,5 +1,6 @@
 package com.pollywog.plugins
 
+import com.pollywog.common.FirebaseAdmin
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 

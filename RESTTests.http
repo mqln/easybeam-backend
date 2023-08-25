@@ -5,3 +5,8 @@ Accept: application/json
 ###
 GET https://pollywog-mpkvqutwqq-uc.a.run.app/api/team/VMe0VFHjyd8k0HJTFp46
 Accept: application/json
+
+###
+POST http://127.0.0.1:8080/api/token/create
+Accept: application/json
+Authorization: Bearer foo

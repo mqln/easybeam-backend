@@ -1,21 +1,22 @@
 package com.pollywog
 
+import com.google.cloud.firestore.Firestore
+import com.pollywog.common.FirebaseAdmin
+import com.pollywog.common.FirestoreRepository
+import com.pollywog.common.Repository
 import com.pollywog.plugins.*
+import com.pollywog.teams.Team
 import com.pollywog.tokens.JWTConfig
-import com.pollywog.tokens.JWTTokenService
+import com.pollywog.tokens.JWTTokenProvider
 import com.pollywog.tokens.TokenService
 import io.ktor.http.*
-import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
+import kotlinx.serialization.json.Json
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
-
 
 fun Application.module() {
 
@@ -38,13 +39,5 @@ fun Application.module() {
     }
     configureAuthentication()
     configureSerialization()
-
-    val jwtConfigSettings = environment.config.config("jwt")
-    val audience = jwtConfigSettings.property("audience").getString()
-    val realm = jwtConfigSettings.property("realm").getString()
-    val secret = jwtConfigSettings.property("secret").getString()
-    val issuer = jwtConfigSettings.property("issuer").getString()
-    val jwtConfig = JWTConfig(issuer, audience, realm, secret)
-    val tokenService = JWTTokenService(jwtConfig)
-    configureRouting(tokenService)
+    configureRouting()
 }

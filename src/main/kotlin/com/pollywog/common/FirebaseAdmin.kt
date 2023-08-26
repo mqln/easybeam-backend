@@ -26,18 +26,14 @@ object FirebaseAdmin {
         auth = FirebaseAuth.getInstance(app)
     }
 }
-
-interface Database<T> {
-    fun getDocument(collection: String, documentId: String): T?
-}
-class FirestoreDatabase<D>(
+class FirestoreRepository<T>(
     private val firestore: Firestore,
     private val json: Json,
-    private val serializer: KSerializer<D>
-) : Database<D> {
+    private val serializer: KSerializer<T>
+) : Repository<T> {
 
-    override fun getDocument(collection: String, documentId: String): D? {
-        val document = firestore.collection(collection).document(documentId).get().get()
+    override fun get(id: String): T? {
+        val document = firestore.document(id).get().get()
         return if (document.exists()) {
             val dataMap = document.data as Map<String, Any>
             val jsonString = Gson().toJson(dataMap)

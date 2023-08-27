@@ -32,7 +32,7 @@ class FirestoreRepository<T>(
     private val serializer: KSerializer<T>
 ) : Repository<T> {
 
-    override fun get(id: String): T? {
+    override suspend fun get(id: String): T? {
         val document = firestore.document(id).get().get()
         return if (document.exists()) {
             val dataMap = document.data as Map<String, Any>
@@ -41,5 +41,9 @@ class FirestoreRepository<T>(
         } else {
             null
         }
+    }
+
+    override suspend fun update(id: String, data: Map<String, Any>) {
+        firestore.document(id).update(data)
     }
 }

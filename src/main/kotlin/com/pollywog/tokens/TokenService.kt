@@ -10,13 +10,28 @@ class TokenService(
     suspend fun generateAndSaveToken(userId: String, teamId: String): Token {
         val tokenString = tokenProvider.createToken(userId)
         val token = Token(UUID.randomUUID().toString(), tokenString)
-        val team = teamRepository.get("teams/$teamId")
-        if (team != null) {
-            val updatedActiveTokens = team.activeTokens + token
-            teamRepository.update("teams/$teamId", mapOf("activeTokens" to updatedActiveTokens))
-        } else {
-            throw Exception("No team $teamId")
+        val team = teamRepository.get("teams/$teamId") ?: throw Exception("No team $teamId")
+
+        if (!team.members.contains(userId)) {
+            throw Exception("You're not a member of this team")
         }
+        val updatedActiveTokens = team.activeTokens + token
+        teamRepository.update("teams/$teamId", mapOf("activeTokens" to updatedActiveTokens))
+
         return token
+    }
+
+    suspend fun revokeToken(userId: String, teamId: String, tokenId: String) {
+        val team = teamRepository.get("teams/$teamId") ?: throw Exception("No team $teamId")
+        if (!team.members.contains(userId)) {
+            throw Exception("You're not a member of this team")
+        }
+        val activeTokens = team.activeTokens.filter { it.id != tokenId }
+        val revokedTokens = team.revokedTokens + team.activeTokens.filter { it.id == tokenId }
+        teamRepository.update("teams/$teamId", mapOf(
+            "activeTokens" to activeTokens,
+            "revokedTokens" to revokedTokens,
+        ))
+        return
     }
 }

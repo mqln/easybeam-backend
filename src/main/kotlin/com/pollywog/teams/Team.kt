@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Team(
     val members: List<String>,
-    val activeTokens: List<Token>,
+    val activeTokens: List<Token> = emptyList(),
+    val revokedTokens: List<Token> = emptyList(),
     val name: String
 )

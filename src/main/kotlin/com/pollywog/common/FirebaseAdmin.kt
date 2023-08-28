@@ -49,6 +49,6 @@ class FirestoreRepository<T>(
 
     override suspend fun update(id: String, data: Map<String, Any>) {
         logger.info("Updating document $id")
-        firestore.document(id).update(data)
+        firestore.document(id).update(data).get()
     }
 }

@@ -3,6 +3,8 @@ package com.pollywog.plugins
 import com.pollywog.common.FirebaseAdmin
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.common.Repository
+import com.pollywog.prompts.Prompt
+import com.pollywog.prompts.PromptService
 import com.pollywog.prompts.promptRouting
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamService
@@ -16,6 +18,7 @@ import com.pollywog.tokens.tokenRouting
 import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
+    val jwtConfig = getJWTConfig()
     routing {
         route("/api") {
             val teamRepository: Repository<Team> = FirestoreRepository(
@@ -23,18 +26,16 @@ fun Application.configureRouting() {
                 Json,
                 Team.serializer()
             )
-            val jwtConfigSettings = environment!!.config.config("jwt")
-            val audience = jwtConfigSettings.property("audience").getString()
-            val realm = jwtConfigSettings.property("realm").getString()
-            val secret = jwtConfigSettings.property("secret").getString()
-            val issuer = jwtConfigSettings.property("issuer").getString()
-            val jwtConfig = JWTConfig(issuer, audience, realm, secret)
             val tokenProvider = JWTTokenProvider(jwtConfig)
-
             val tokenService = TokenService(tokenProvider, teamRepository)
+            val promptService = PromptService(FirestoreRepository(
+                FirebaseAdmin.firestore,
+                Json,
+                Prompt.serializer()
+            ))
             tokenRouting(tokenService)
             teamRouting(TeamService(teamRepository))
-            promptRouting()
+            promptRouting(promptService)
         }
     }
 }

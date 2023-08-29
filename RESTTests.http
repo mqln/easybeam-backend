@@ -7,6 +7,6 @@ GET https://pollywog-mpkvqutwqq-uc.a.run.app/api/team/VMe0VFHjyd8k0HJTFp46
 Accept: application/json
 
 ###
-POST http://127.0.0.1:8080/api/token/create
+GET http://127.0.0.1:8080/api/prompt/abc
 Accept: application/json
-Authorization: Bearer foo
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwOi8vMC4wLjAuMDo4MDgwL2hlbGxvIiwiaXNzIjoiaHR0cDovLzAuMC4wLjA6ODA4MC8iLCJ1c2VySWQiOiJLVjFOQzNnSThRYXJGOThYMlZEOVZoY2FMZlIyIiwidGVhbUlkIjoicU1lU1ppZnRlU1VVQVhsT25BT1MiLCJ0b2tlbklkIjoiZWExYTQwNmMtODQ2NC00NDE5LTkxOWMtNzliMTRhNDkxNmMyIiwiaXNzdWVkQXQiOiJUdWUgQXVnIDI5IDE0OjE2OjAwIENFU1QgMjAyMyJ9.bxCPX6WcGnCGf9fqyQIYyApdG5k7adRUXgkt7In0di4

@@ -23,14 +23,14 @@ fun Application.configureRouting() {
         route("/api") {
             val teamRepository: Repository<Team> = FirestoreRepository(
                 FirebaseAdmin.firestore,
-                Json,
+                sharedJson,
                 Team.serializer()
             )
             val tokenProvider = JWTTokenProvider(jwtConfig)
             val tokenService = TokenService(tokenProvider, teamRepository)
             val promptService = PromptService(FirestoreRepository(
                 FirebaseAdmin.firestore,
-                Json,
+                sharedJson,
                 Prompt.serializer()
             ))
             tokenRouting(tokenService)

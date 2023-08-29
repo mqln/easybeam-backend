@@ -19,13 +19,13 @@ import kotlinx.serialization.json.Json
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module() {
-
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             call.application.log.error("Unhandled exception caught", cause)
             call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
         }
     }
+    configureSerialization()
     install(CORS) {
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
@@ -38,6 +38,5 @@ fun Application.module() {
         anyHost()
     }
     configureAuthentication()
-    configureSerialization()
     configureRouting()
 }

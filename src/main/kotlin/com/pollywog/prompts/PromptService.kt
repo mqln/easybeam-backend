@@ -5,17 +5,18 @@ import com.pollywog.teams.Team
 import java.util.*
 class PromptService(
     private val promptRepository: Repository<Prompt>,
+    private val promptIdProvider: PromptRepoIdProvider,
 ) {
     suspend fun getPrompt(
         teamId: String,
         promptId: String,
         parameters: Map<String, Any>
     ): String {
-
-        val prompt = promptRepository.get("teams/$teamId/prompts/$promptId") ?: throw Exception("Prompt not found")
+        val prompt = promptRepository.get(promptIdProvider.id(teamId, promptId)) ?: throw Exception("Prompt not found")
         val currentVersion = prompt.currentVersionData ?: throw Exception("No current version")
 
         validateParameters(parameters, currentVersion.allowedParameters)
+
         return replacePlaceholders(currentVersion.prompt, parameters)
     }
 

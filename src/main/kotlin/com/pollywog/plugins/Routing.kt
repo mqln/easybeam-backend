@@ -3,9 +3,8 @@ package com.pollywog.plugins
 import com.pollywog.common.FirebaseAdmin
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.common.Repository
-import com.pollywog.prompts.Prompt
-import com.pollywog.prompts.PromptService
-import com.pollywog.prompts.promptRouting
+import com.pollywog.prompts.*
+import com.pollywog.teams.FirestoreTeamRepoIdProvider
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamService
 import io.ktor.server.application.*
@@ -27,12 +26,15 @@ fun Application.configureRouting() {
                 Team.serializer()
             )
             val tokenProvider = JWTTokenProvider(jwtConfig)
-            val tokenService = TokenService(tokenProvider, teamRepository)
-            val promptService = PromptService(FirestoreRepository(
-                FirebaseAdmin.firestore,
-                sharedJson,
-                Prompt.serializer()
-            ))
+            val tokenService = TokenService(tokenProvider, teamRepository, FirestoreTeamRepoIdProvider())
+            val promptService = PromptService(
+                FirestoreRepository(
+                    FirebaseAdmin.firestore,
+                    sharedJson,
+                 Prompt.serializer()
+                ),
+                FirestorePromptIdProvider()
+            )
             tokenRouting(tokenService)
             teamRouting(TeamService(teamRepository))
             promptRouting(promptService)

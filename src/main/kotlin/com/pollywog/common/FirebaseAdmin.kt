@@ -51,4 +51,10 @@ class FirestoreRepository<T>(
         logger.info("Updating document $id")
         firestore.document(id).update(data).get()
     }
+
+    override suspend fun set(id: String, data: T) {
+        val jsonString = json.encodeToString(serializer, data)
+        val map = Gson().fromJson(jsonString, Map::class.java)
+        firestore.document(id).set(map).get()
+    }
 }

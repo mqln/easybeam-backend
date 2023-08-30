@@ -12,10 +12,13 @@ import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 
 @Serializable
-data class GetPromptRequest(val parameters: Map<String, String> = emptyMap())
+data class GetPromptRequest(
+    val parameters: Map<String, String> = emptyMap(),
+    val chatId: String? = null
+)
 
 @Serializable
-data class GetPromptResponse(val prompt: String)
+data class GetPromptResponse(val prompt: String, val chatId: String)
 fun Route.promptRouting(promptService: PromptService) {
     val logger = LoggerFactory.getLogger(TokenService::class.java)
     authenticate("auth-jwt") {
@@ -29,8 +32,8 @@ fun Route.promptRouting(promptService: PromptService) {
                 )
                 logger.info("Serving prompt $promptId for $teamId")
                 val requestBody = call.receive<GetPromptRequest>()
-                val prompt = promptService.getPrompt(teamId, promptId, requestBody.parameters)
-                call.respond(GetPromptResponse(prompt))
+                val processedPrompt = promptService.processRequest(teamId, promptId, requestBody.parameters, requestBody.chatId)
+                call.respond(GetPromptResponse(processedPrompt.filledPrompt, processedPrompt.chatId))
             }
         }
     }

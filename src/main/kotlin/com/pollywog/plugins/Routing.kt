@@ -10,11 +10,9 @@ import com.pollywog.teams.TeamService
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import com.pollywog.teams.teamRouting
-import com.pollywog.tokens.JWTConfig
 import com.pollywog.tokens.JWTTokenProvider
 import com.pollywog.tokens.TokenService
 import com.pollywog.tokens.tokenRouting
-import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
     val jwtConfig = getJWTConfig()
@@ -33,7 +31,13 @@ fun Application.configureRouting() {
                     sharedJson,
                  Prompt.serializer()
                 ),
-                FirestorePromptIdProvider()
+                FirestoreRepository(
+                    FirebaseAdmin.firestore,
+                    sharedJson,
+                    ServedPrompt.serializer()
+                ),
+                FirestorePromptIdProvider(),
+                FirestoreServedPromptRepoIdProvider()
             )
             tokenRouting(tokenService)
             teamRouting(TeamService(teamRepository))

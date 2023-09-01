@@ -17,6 +17,7 @@ data class CreateTokenRequest(val teamId: String)
 data class RevokeTokenRequest(val teamId: String, val tokenId: String)
 fun Route.tokenRouting(tokenService: TokenService) {
     val logger = LoggerFactory.getLogger(TokenService::class.java)
+    // TODO: This doesn't make sense -- move to team service and use params
     authenticate("auth-bearer") {
         route("/token") {
             post("/create") {

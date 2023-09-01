@@ -11,19 +11,12 @@ import com.pollywog.tokens.TokenService
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 fun Application.configureAuthentication() {
     val logger = LoggerFactory.getLogger(TokenService::class.java)
     val jwtConfig = getJWTConfig()
-    val authService = AuthService(
-        FirestoreRepository(
-            FirebaseAdmin.firestore,
-            Json,
-            Team.serializer()
-        )
-    )
+    val authService = AuthService(FirestoreRepository(Team.serializer()))
     install(Authentication) {
         bearer("auth-bearer") {
             realm = "Access to the '/' path"

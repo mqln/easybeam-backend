@@ -7,6 +7,7 @@ import com.google.firebase.FirebaseOptions
 import com.google.cloud.firestore.FirestoreOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
+import com.pollywog.plugins.sharedJson
 import com.pollywog.tokens.TokenService
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
@@ -29,9 +30,9 @@ object FirebaseAdmin {
     }
 }
 class FirestoreRepository<T>(
-    private val firestore: Firestore,
-    private val json: Json,
-    private val serializer: KSerializer<T>
+    private val serializer: KSerializer<T>,
+    private val firestore: Firestore = FirebaseAdmin.firestore,
+    private val json: Json = sharedJson,
 ) : Repository<T> {
     val logger = LoggerFactory.getLogger(TokenService::class.java)
     override suspend fun get(id: String): T? {

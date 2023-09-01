@@ -18,3 +18,27 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwOi8vM
   },
   "chatId": "aaaaaaaaa"
 }
+###
+POST http://127.0.0.1:8080/api/team/qMeSZifteSUUAXlOnAOS/secret/add
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImM2MGI5ZGUwODBmZmFmYmZjMTgzMzllY2Q0NGFjNzdmN2ZhNGU4ZDMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcG9sbHl3b2ctYWktZGV2IiwiYXVkIjoicG9sbHl3b2ctYWktZGV2IiwiYXV0aF90aW1lIjoxNjkyODg0OTMxLCJ1c2VyX2lkIjoiS1YxTkMzZ0k4UWFyRjk4WDJWRDlWaGNhTGZSMiIsInN1YiI6IktWMU5DM2dJOFFhckY5OFgyVkQ5VmhjYUxmUjIiLCJpYXQiOjE2OTM0MTA1NTIsImV4cCI6MTY5MzQxNDE1MiwiZW1haWwiOiJkb2dAZmFydC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsiZG9nQGZhcnQuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.Ej-IoXmxTYRxr4QXBTvG64Wldv2xLcoHgubp_BYTdCnGJ1JywlAk8Vuf-dqTPh8MPJMLAqtDI6-Vo9h8ntx__d4mYWIYRxCz0pSoVXfayk0AnZxpQAzRwfOy5X1YdOIorDY6tgRMTMZpdoRH1exZ6AT4p28HR9tM3IeJu_ta6B95hO0bzd_9T2b52BB4JlnA8BYojHN3lzXfPKScToekuj8o1cAfqemcnMSKhbVBU3iwDBrvRWxui5CxhPYq0_Tf2vgb4yFIF7pz-b36Ur__09Huhz6poxc3hG7UimeTbmxvE69yema0FooFVMpboPoiIImLg5lVbI7nbmF6XqrpUQ
+
+{
+  "secret": "foo",
+  "key": "bar2"
+}
+
+###
+GET http://127.0.0.1:8080/api/chat/abc
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwOi8vMC4wLjAuMDo4MDgwL2hlbGxvIiwiaXNzIjoiaHR0cDovLzAuMC4wLjA6ODA4MC8iLCJ1c2VySWQiOiJLVjFOQzNnSThRYXJGOThYMlZEOVZoY2FMZlIyIiwidGVhbUlkIjoicU1lU1ppZnRlU1VVQVhsT25BT1MiLCJ0b2tlbklkIjoiNzQyZGY4ZjMtY2Y5Mi00NzI5LTkyZjktMTQ5MDAyZGFlYzAxIiwiaXNzdWVkQXQiOiJUdWUgQXVnIDI5IDE1OjA0OjI2IENFU1QgMjAyMyJ9.spJJs9U398VfypQOxOH0RReZbhXtbFexoSjTqdX7Hlk
+
+{
+  "parameters": {
+    "journal": "I'm feeling like absolutely shit i don't know what to do"
+  },
+  "chatId": "aaaaaaaaa",
+  "messages": []
+}

@@ -1,6 +1,7 @@
 package com.pollywog.tokens
 
 import com.pollywog.common.Repository;
+import com.pollywog.teams.Membership
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamRepoIdProvider
 import java.util.*
@@ -15,8 +16,8 @@ class TokenService(
         val token = Token(tokenId, tokenString)
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
 
-        if (!team.members.contains(userId)) {
-            throw Exception("You're not a member of this team")
+        if (team.members[userId] != Membership.ADMIN) {
+            throw Exception("Only admins can generate tokens")
         }
         val updatedActiveTokens = team.activeTokens + token
         teamRepository.update(teamRepoIdProvider.id(teamId), mapOf("activeTokens" to updatedActiveTokens))
@@ -26,8 +27,8 @@ class TokenService(
 
     suspend fun revokeToken(userId: String, teamId: String, tokenId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
-        if (!team.members.contains(userId)) {
-            throw Exception("You're not a member of this team")
+        if (team.members[userId] != Membership.ADMIN) {
+            throw Exception("Only admins can revoke tokens")
         }
         val activeTokens = team.activeTokens.filter { it.id != tokenId }
         val revokedTokens = team.revokedTokens + team.activeTokens.filter { it.id == tokenId }

@@ -16,7 +16,7 @@ class TokenService(
         val token = Token(tokenId, tokenString)
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
 
-        if (team.members[userId] != Membership.ADMIN) {
+        if (team.members[userId]?.role != Membership.ADMIN) {
             throw Exception("Only admins can generate tokens")
         }
         val updatedActiveTokens = team.activeTokens + token
@@ -27,7 +27,7 @@ class TokenService(
 
     suspend fun revokeToken(userId: String, teamId: String, tokenId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
-        if (team.members[userId] != Membership.ADMIN) {
+        if (team.members[userId]?.role != Membership.ADMIN) {
             throw Exception("Only admins can revoke tokens")
         }
         val activeTokens = team.activeTokens.filter { it.id != tokenId }

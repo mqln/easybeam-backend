@@ -4,17 +4,12 @@ import com.pollywog.common.Repository
 import com.pollywog.teams.EncryptionProvider
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamRepoIdProvider
-import kotlinx.serialization.json.JsonElement
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.util.*
 
-data class ProcessedPrompt(
-    val filledPrompt: String,
-    val chatId: String
-)
-
 data class ProcessedChat(
-    val response: JsonElement,
-    val chatId: String
+    val message: ChatInput, val chatId: String
 )
 
 class PromptService(
@@ -25,28 +20,31 @@ class PromptService(
     private val teamRepoIdProvider: TeamRepoIdProvider,
     private val servedPromptRepoIdProvider: ServedPromptRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,
-    private val chatTransformer: ChatTransformer,
+    private val chatProcessor: ChatProcessor,
 ) {
-    suspend fun processRequest(
-        teamId: String,
-        promptId: String,
-        parameters: Map<String, Any>,
-        chatId: String?
-    ): ProcessedPrompt {
+    private data class PreparedChat(
+        val filledPrompt: String, val secret: String, val config: PromptConfig, val chatId: String
+    )
+
+    private suspend fun prepareChat(
+        teamId: String, promptId: String, parameters: Map<String, Any>, chatId: String?
+    ): PreparedChat {
+        val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("Team not found")
         val prompt = promptRepository.get(promptIdProvider.id(teamId, promptId)) ?: throw Exception("Prompt not found")
         val currentVersion = prompt.currentVersionData ?: throw Exception("No current version")
-
-        validateParameters(parameters, currentVersion.allowedParameters)
+        val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")
+        val secret = encryptionProvider.decrypt(encryptedSecret)
 
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
-        val servedPrompt = ServedPrompt(filledPrompt, chatId ?: UUID.randomUUID().toString())
+        val newChatId = chatId ?: UUID.randomUUID().toString()
+
+        val servedPrompt = ServedPrompt(filledPrompt, newChatId)
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, promptId, null)
+
         // TODO: save on a different thread, eventually
         servedPromptRepository.set(servedPromptRepoId, servedPrompt)
-        return ProcessedPrompt(
-            filledPrompt,
-            chatId ?: UUID.randomUUID().toString()
-        )
+
+        return PreparedChat(filledPrompt, secret, currentVersion.config, newChatId)
     }
 
     suspend fun processChat(
@@ -54,43 +52,35 @@ class PromptService(
         promptId: String,
         parameters: Map<String, Any>,
         chatId: String?,
-        messages: JsonElement
+        messages: List<ChatInput>,
     ): ProcessedChat {
-        val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("Team not found")
-        val prompt = promptRepository.get(promptIdProvider.id(teamId, promptId)) ?: throw Exception("Prompt not found")
-        val currentVersion = prompt.currentVersionData ?: throw Exception("No current version")
-        val encryptedSecret = team.secrets[currentVersion.transformer.provider] ?: throw Exception("No key for transformer")
-        val secret = encryptionProvider.decrypt(encryptedSecret)
+        val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
 
-        validateParameters(parameters, currentVersion.allowedParameters)
-
-        val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
-        val servedPrompt = ServedPrompt(filledPrompt, chatId ?: UUID.randomUUID().toString())
-        val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, promptId, null)
-
-        // TODO: save on a different thread, eventually
-        servedPromptRepository.set(servedPromptRepoId, servedPrompt)
-
-        val response = chatTransformer.makeRequest(
-            filledPrompt,
-            messages,
-            currentVersion.transformer.config,
-            secret
+        val response = chatProcessor.processChat(
+            preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
         )
 
         return ProcessedChat(
-            response = response,
-            chatId = chatId ?: UUID.randomUUID().toString(),
+            message = response, chatId = preparedChat.chatId
         )
     }
 
-    private fun validateParameters(
-        requestParameters: Map<String, Any>,
-        allowedParameters: Map<String, PromptParameter>?
-    ) {
-        val missingParameters = (allowedParameters?.keys ?: emptySet()) - requestParameters.keys
-        if (missingParameters.isNotEmpty()) {
-            throw Exception("Missing parameters: $missingParameters.")
+    suspend fun processChatFlow(
+        teamId: String,
+        promptId: String,
+        parameters: Map<String, Any>,
+        chatId: String?,
+        messages: List<ChatInput>,
+    ): Flow<ProcessedChat> {
+        val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
+
+        return chatProcessor.processChatFlow(
+            preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
+        ).map {
+            ProcessedChat(
+                message = it,
+                chatId = preparedChat.chatId,
+            )
         }
     }
 

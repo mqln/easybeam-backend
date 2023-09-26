@@ -30,15 +30,29 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImM2MGI5ZGUwODBmZmFmYmZjMTgzMz
 }
 
 ###
-GET http://127.0.0.1:8080/api/chat/abc
+GET http://127.0.0.1:8080/api/chat/daily-advice
 Accept: application/json
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwOi8vMC4wLjAuMDo4MDgwL2hlbGxvIiwiaXNzIjoiaHR0cDovLzAuMC4wLjA6ODA4MC8iLCJ1c2VySWQiOiJLVjFOQzNnSThRYXJGOThYMlZEOVZoY2FMZlIyIiwidGVhbUlkIjoicU1lU1ppZnRlU1VVQVhsT25BT1MiLCJ0b2tlbklkIjoiNzQyZGY4ZjMtY2Y5Mi00NzI5LTkyZjktMTQ5MDAyZGFlYzAxIiwiaXNzdWVkQXQiOiJUdWUgQXVnIDI5IDE1OjA0OjI2IENFU1QgMjAyMyJ9.spJJs9U398VfypQOxOH0RReZbhXtbFexoSjTqdX7Hlk
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwOi8vMC4wLjAuMDo4MDgwL2hlbGxvIiwiaXNzIjoiaHR0cDovLzAuMC4wLjA6ODA4MC8iLCJ1c2VySWQiOiJLVjFOQzNnSThRYXJGOThYMlZEOVZoY2FMZlIyIiwidGVhbUlkIjoicU1lU1ppZnRlU1VVQVhsT25BT1MiLCJ0b2tlbklkIjoiYjEwMmE3ZjEtMjc4Yy00ZTc0LTg2NjAtNWRkNGVhNTg0MTY1IiwiaXNzdWVkQXQiOiJGcmkgU2VwIDAxIDE5OjI4OjE2IENFU1QgMjAyMyJ9.OHHs8k4Pz2XZPfVoHR1KVxS9j72wBoxxnukybsuqRZg
 
 {
   "parameters": {
     "journal": "I'm feeling like absolutely shit i don't know what to do"
   },
-  "chatId": "aaaaaaaaa",
+  "chatId": "abc",
+  "stream": false,
+  "messages": []
+}
+
+###
+POST http://127.0.0.1:8080/api/prompt-tests/run
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImFkNWM1ZTlmNTdjOWI2NDYzYzg1ODQ1YTA4OTlhOWQ0MTI5MmM4YzMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcG9sbHl3b2ctYWktZGV2IiwiYXVkIjoicG9sbHl3b2ctYWktZGV2IiwiYXV0aF90aW1lIjoxNjkzOTM5MDEzLCJ1c2VyX2lkIjoidGRyTWwzWXdDM2JhODJnMWR0dkVBNFNuZjJGMyIsInN1YiI6InRkck1sM1l3QzNiYTgyZzFkdHZFQTRTbmYyRjMiLCJpYXQiOjE2OTU3Mzc0MTQsImV4cCI6MTY5NTc0MTAxNCwiZW1haWwiOiJtYWNsZWFuaGF3bGV5QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbIm1hY2xlYW5oYXdsZXlAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.HbXs-exd75jP2z4rhci6NWF_1lasE9AWttJZJ3utf4B3IJ9ZXYDnQEiPlRLhFd9XKHVVkzOe0Nac2DxYCQ0ijaEIuFy_lsIfrXyVbOmtYHwB7-1JDQ-co6rexjVqXquAjg9zoSNEa3SPMvm_PyEBBEMpIPKMfL4AQJR1Vfu2h-MFvz8bwLQ79vl1AFWGhZSZFaME_jXHD6paaO5sFH6Qsux1-BsJSsK6dC19jWx9yuAlf91V2TaObm_qikYmGs7LvUBDwHk34TLK7KjxAkf5QTQU-hltB44tJnyUZYXP_s6oXvtO5FAXoef2T2bBhXGdLVQJ-9wBBvMDLiTe-ghRMA
+
+{
+  "teamId": "qMeSZifteSUUAXlOnAOS",
+  "promptId": "daily-advice",
+  "testRunId": "8JTh8JRDh3EhNwjHeB3G",
   "messages": []
 }

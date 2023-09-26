@@ -1,7 +1,6 @@
 package com.pollywog.prompts
 
 import kotlinx.serialization.Serializable
-
 @Serializable
 data class ServedPrompt(
     val filledPrompt: String,

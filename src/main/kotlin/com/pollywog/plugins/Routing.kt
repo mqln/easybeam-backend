@@ -1,8 +1,11 @@
 package com.pollywog.plugins
 
-import com.pollywog.common.FirebaseAdmin
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.common.Repository
+import com.pollywog.promptTests.FirestorePromptTestRunIdProvider
+import com.pollywog.promptTests.PromptTestRun
+import com.pollywog.promptTests.PromptTestService
+import com.pollywog.promptTests.promptTestsRouting
 import com.pollywog.prompts.*
 import com.pollywog.teams.*
 import io.ktor.server.application.*
@@ -21,6 +24,8 @@ fun Application.configureRouting() {
             val teamRepository: Repository<Team> = FirestoreRepository(Team.serializer())
             val tokenProvider = JWTTokenProvider(jwtConfig)
             val tokenService = TokenService(tokenProvider, teamRepository, FirestoreTeamRepoIdProvider())
+            val promptTestRunRepository = FirestoreRepository(PromptTestRun.serializer())
+            val promptTestRunIdProvider = FirestorePromptTestRunIdProvider()
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(Prompt.serializer()),
                 servedPromptRepository = FirestoreRepository(ServedPrompt.serializer()),
@@ -29,7 +34,15 @@ fun Application.configureRouting() {
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 teamRepository = FirestoreRepository(Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
-                chatTransformer = OpenAIChatTransformer()
+                chatProcessor = OpenAIChatProcessor()
+            )
+            val promptTestService = PromptTestService(
+                promptTestRunRepo = promptTestRunRepository,
+                promptTestIdProvider = promptTestRunIdProvider,
+                encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
+                teamRepository = FirestoreRepository(Team.serializer()),
+                teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
+                chatProcessor = OpenAIChatProcessor()
             )
             tokenRouting(tokenService)
             teamRouting(
@@ -40,6 +53,7 @@ fun Application.configureRouting() {
                 )
             )
             promptRouting(promptService)
+            promptTestsRouting(promptTestService)
         }
     }
 }

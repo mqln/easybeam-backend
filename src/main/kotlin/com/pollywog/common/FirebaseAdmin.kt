@@ -6,6 +6,7 @@ import com.google.cloud.Timestamp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.cloud.firestore.FirestoreOptions
+import com.google.cloud.firestore.SetOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
 import com.pollywog.plugins.sharedJson
@@ -88,8 +89,6 @@ class FirestoreRepository<T>(
 
     override suspend fun get(id: String): T? {
         val document = firestore.document(id).get().get()
-
-        logger.info("Fetching document $id")
         return if (document.exists()) {
             val dataMap = convertTimestampsToInstant(document.data as Map<String, Any>)
             val jsonString = Gson().toJson(dataMap)
@@ -101,9 +100,8 @@ class FirestoreRepository<T>(
     }
 
     override suspend fun update(id: String, data: Map<String, Any>) {
-        logger.info("Updating document $id")
         val transformedData = convertInstantToTimestamps(data)
-        firestore.document(id).update(transformedData).get()
+        firestore.document(id).set(transformedData, SetOptions.merge()).get()
     }
 
     override suspend fun set(id: String, data: T) {

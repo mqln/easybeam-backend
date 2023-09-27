@@ -28,13 +28,12 @@ class PromptTestService(
             val secret = fetchAndDecryptSecret(team, promptTestRun.configId)
 
             processChatFlowAndUpdateRepo(promptTestRun, secret, testRunRepoId)
+            promptTestRunRepo.update(testRunRepoId, mapOf("status" to TestRunStatus.COMPLETED))
         } catch (error: Exception) {
             promptTestRunRepo.update(testRunRepoId, mapOf(
                 "errorMessage" to (error.message ?: "Unknown"),
                 "status" to TestRunStatus.ERROR
             ))
-        } finally {
-            promptTestRunRepo.update(testRunRepoId, mapOf("status" to TestRunStatus.COMPLETED))
         }
     }
 

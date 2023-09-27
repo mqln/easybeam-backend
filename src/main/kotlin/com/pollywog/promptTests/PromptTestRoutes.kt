@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 data class RunPromptTestRequest(
     val teamId: String,
     val promptId: String,
-    val testRunId: String,
+    val testRun: PromptTestRun,
     val messages: List<ChatInput>
 )
 
@@ -32,7 +32,7 @@ fun Route.promptTestsRouting(promptTestService: PromptTestService) {
                     userId = userIdPrincipal.name,
                     teamId = requestBody.teamId,
                     promptId = requestBody.promptId,
-                    testRunId = requestBody.testRunId
+                    promptTestRun = requestBody.testRun,
                 )
                 call.respond(200)
             }

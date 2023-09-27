@@ -1,7 +1,9 @@
 package com.pollywog.promptTests
-
 import com.pollywog.prompts.PromptConfig
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class PromptTestRun(
@@ -12,7 +14,9 @@ data class PromptTestRun(
     val config: PromptConfig,
     val configId: String,
     val status: TestRunStatus,
-    val result: String? = null
+    val result: String? = null,
+    val parameterValues: JsonElement,
+    val createdAt: Instant? = Clock.System.now(),
 )
 
 @Serializable

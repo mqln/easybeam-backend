@@ -1,4 +1,5 @@
 package com.pollywog.promptTests
+
 import com.pollywog.prompts.PromptConfig
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -17,9 +18,10 @@ data class PromptTestRun(
     val result: String? = null,
     val parameterValues: JsonElement,
     val createdAt: Instant? = Clock.System.now(),
+    val errorMessage: String? = null
 )
 
 @Serializable
 enum class TestRunStatus {
-    WAITING, IN_PROGRESS, COMPLETED
+    IN_PROGRESS, COMPLETED, ERROR
 }

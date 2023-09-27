@@ -21,7 +21,7 @@ class PromptTestService(
 ) {
     suspend fun startTest(userId: String, teamId: String, promptId: String, promptTestRun: PromptTestRun) {
         val testRunRepoId = promptTestIdProvider.id(teamId, promptId, null)
-
+        promptTestRunRepo.set(testRunRepoId, promptTestRun)
         try {
             val team = fetchTeam(teamId)
             validateUserMembership(userId, team)

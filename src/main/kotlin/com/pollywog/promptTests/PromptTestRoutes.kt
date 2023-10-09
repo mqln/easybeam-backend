@@ -17,7 +17,6 @@ data class RunPromptTestRequest(
     val teamId: String,
     val promptId: String,
     val testRun: PromptTestRun,
-    val messages: List<ChatInput>
 )
 
 fun Route.promptTestsRouting(promptTestService: PromptTestService) {

@@ -1,5 +1,6 @@
 package com.pollywog.promptTests
 
+import com.pollywog.prompts.ChatInput
 import com.pollywog.prompts.PromptConfig
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -18,7 +19,8 @@ data class PromptTestRun(
     val result: String? = null,
     val parameterValues: JsonElement,
     val createdAt: Instant? = Clock.System.now(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val messages: List<ChatInput>
 )
 
 @Serializable

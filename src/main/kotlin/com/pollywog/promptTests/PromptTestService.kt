@@ -21,13 +21,14 @@ class PromptTestService(
 ) {
     suspend fun startTest(userId: String, teamId: String, promptId: String, promptTestRun: PromptTestRun) {
         val testRunRepoId = promptTestIdProvider.id(teamId, promptId, null)
-        promptTestRunRepo.set(testRunRepoId, promptTestRun)
+        val newTestRun = promptTestRun.copy(createdAt = Clock.System.now())
+        promptTestRunRepo.set(testRunRepoId, newTestRun)
         try {
             val team = fetchTeam(teamId)
             validateUserMembership(userId, team)
-            val secret = fetchAndDecryptSecret(team, promptTestRun.configId)
+            val secret = fetchAndDecryptSecret(team, newTestRun.configId)
 
-            processChatFlowAndUpdateRepo(promptTestRun, secret, testRunRepoId)
+            processChatFlowAndUpdateRepo(newTestRun, secret, testRunRepoId)
             promptTestRunRepo.update(testRunRepoId, mapOf("status" to TestRunStatus.COMPLETED))
         } catch (error: Exception) {
             promptTestRunRepo.update(testRunRepoId, mapOf(
@@ -63,7 +64,7 @@ class PromptTestService(
             filledPrompt = promptTestRun.prompt,
             secret = secret,
             config = promptTestRun.config,
-            messages = emptyList()
+            messages = promptTestRun.messages
         )
         result.collect {
             promptTestRunRepo.update(testRunRepoId, mapOf("result" to it.content))

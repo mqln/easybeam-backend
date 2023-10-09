@@ -9,13 +9,16 @@ import com.google.cloud.firestore.FirestoreOptions
 import com.google.cloud.firestore.SetOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.pollywog.plugins.sharedJson
 import com.pollywog.tokens.TokenService
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.Date
-
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toKotlinInstant
 
@@ -35,6 +38,7 @@ object FirebaseAdmin {
         auth = FirebaseAuth.getInstance(app)
     }
 }
+
 object TimestampConverter {
     fun toInstant(timestamp: Timestamp): Instant {
         return timestamp.toDate().toInstant().toKotlinInstant()
@@ -51,63 +55,54 @@ class FirestoreRepository<T>(
     private val json: Json = sharedJson,
 ) : Repository<T> {
     val logger = LoggerFactory.getLogger(TokenService::class.java)
+    private val customGson = GsonBuilder()
+        .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
+        .create()
 
-    private fun stringToInstant(stringValue: String): Instant? {
-        return try {
-            Instant.parse(stringValue)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun convertTimestampsToInstant(dataMap: Map<String, Any>): Map<String, Any> {
-        val mutableMap = dataMap.toMutableMap()
-        mutableMap.forEach { (key, value) ->
-            if (value is Timestamp) {
-                mutableMap[key] = TimestampConverter.toInstant(value)
-            }
-        }
-        return mutableMap
-    }
-
-    private fun convertInstantToTimestamps(data: Map<String, Any>): Map<String, Any> {
-        val mutableMap = data.toMutableMap()
-        mutableMap.forEach { (key, value) ->
-            when (value) {
-                is String -> {
-                    stringToInstant(value)?.let {
-                        mutableMap[key] = TimestampConverter.toTimestamp(it)
-                    }
-                }
-                is Instant -> {
-                    mutableMap[key] = TimestampConverter.toTimestamp(value)
-                }
-            }
-        }
-        return mutableMap
-    }
 
     override suspend fun get(id: String): T? {
         val document = firestore.document(id).get().get()
         return if (document.exists()) {
-            val dataMap = convertTimestampsToInstant(document.data as Map<String, Any>)
-            val jsonString = Gson().toJson(dataMap)
-            json.decodeFromString(serializer, jsonString)
+            return convert(document.data as Map<String, Any>)
         } else {
             logger.warn("Document not found: $id")
             null
         }
     }
 
+    private fun convert(documentData: Map<String, Any>): T {
+        val jsonString = customGson.toJson(documentData)
+        return json.decodeFromString(serializer, jsonString)
+    }
+
     override suspend fun update(id: String, data: Map<String, Any>) {
-        val transformedData = convertInstantToTimestamps(data)
-        firestore.document(id).set(transformedData, SetOptions.merge()).get()
+        val jsonString = customGson.toJson(data)
+        val transformed = customGson.fromJson(jsonString, Map::class.java) as Map<String, Any>
+
+        firestore.document(id).set(transformed, SetOptions.merge()).get()
     }
 
     override suspend fun set(id: String, data: T) {
         val jsonString = json.encodeToString(serializer, data)
-        val map = Gson().fromJson(jsonString, Map::class.java) as Map<String, Any>
-        val transformedMap = convertInstantToTimestamps(map)
-        firestore.document(id).set(transformedMap).get()
+        val map = customGson.fromJson(jsonString, Map::class.java) as Map<String, Any>
+        firestore.document(id).set(map).get()
+    }
+
+    override suspend fun getList(path: String): List<T> {
+        val collection = firestore.collection(path).get().get()
+        return collection.documents.map { convert(it.data as Map<String, Any>) }
+    }
+}
+
+class TimestampTypeAdapter : TypeAdapter<Timestamp>() {
+    override fun write(out: JsonWriter, value: Timestamp?) {
+        value?.let {
+            out.value(it.toDate().toInstant().toString())
+        } ?: out.nullValue()
+    }
+
+    override fun read(input: JsonReader): Timestamp {
+        val instant = Instant.parse(input.nextString())
+        return Timestamp.of(Date(instant.toEpochMilliseconds()))
     }
 }

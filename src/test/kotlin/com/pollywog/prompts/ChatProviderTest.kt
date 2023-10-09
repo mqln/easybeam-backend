@@ -12,13 +12,15 @@ class ChatIdProviderTest {
     fun testEncodingAndDecoding() {
         val promptId = "samplePromptId"
         val versionId = "sampleVersionId"
+        val uuid = "abc"
 
-        val chatId = chatIdProvider.createId(promptId, versionId)
+        val chatId = chatIdProvider.createId(promptId, versionId, uuid)
 
         val result = chatIdProvider.decodeId(chatId)
 
         assertEquals(promptId, result.promptId)
         assertEquals(versionId, result.versionId)
+        assertEquals(uuid, result.uuid)
     }
 
     @Test
@@ -34,12 +36,14 @@ class ChatIdProviderTest {
     fun testEncodingAndDecodingWithSpecialCharacters() {
         val promptId = "samplePromptId$%&*"
         val versionId = "sampleVersionId$%&*"
+        val uuid = "uuid$%&*"
 
-        val chatId = chatIdProvider.createId(promptId, versionId)
+        val chatId = chatIdProvider.createId(promptId, versionId, uuid)
 
         val result = chatIdProvider.decodeId(chatId)
 
         assertEquals(promptId, result.promptId)
         assertEquals(versionId, result.versionId)
+        assertEquals(uuid, result.uuid)
     }
 }

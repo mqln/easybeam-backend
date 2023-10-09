@@ -38,7 +38,7 @@ class PromptService(
         val secret = encryptionProvider.decrypt(encryptedSecret)
 
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
-        val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId)
+        val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId, UUID.randomUUID().toString())
 
         val servedPrompt = ServedPrompt(filledPrompt, newChatId)
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, promptId, null)

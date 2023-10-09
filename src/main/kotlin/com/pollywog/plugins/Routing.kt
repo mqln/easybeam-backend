@@ -65,7 +65,9 @@ fun Application.configureRouting() {
             val reviewService = ReviewService(
                 reviewRepo = FirestoreRepository(Review.serializer()),
                 reviewIdProvider = FirebaseReviewIdProvider(),
-                chatIdProvider = ChatIdProvider()
+                chatIdProvider = ChatIdProvider(),
+                versionRepo = FirestoreRepository(PromptVersion.serializer()),
+                versionIdProvider = FirestorePromptVersionIdProvider()
             )
             reviewRouting(reviewService = reviewService)
         }

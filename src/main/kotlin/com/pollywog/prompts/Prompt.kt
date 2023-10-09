@@ -9,11 +9,3 @@ data class Prompt(
     val currentVersionId: String? = null,
     val parameters: List<String> = emptyList()
 )
-
-@Serializable
-data class PromptVersion(
-    val name: String,
-    val prompt: String,
-    val config: PromptConfig,
-    val configId: String
-)

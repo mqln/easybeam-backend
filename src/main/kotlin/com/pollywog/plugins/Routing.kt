@@ -34,7 +34,8 @@ fun Application.configureRouting() {
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 teamRepository = FirestoreRepository(Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
-                chatProcessor = OpenAIChatProcessor()
+                chatProcessor = OpenAIChatProcessor(),
+                chatIdProvider = ChatIdProvider()
             )
             val promptTestService = PromptTestService(
                 promptTestRunRepo = promptTestRunRepository,

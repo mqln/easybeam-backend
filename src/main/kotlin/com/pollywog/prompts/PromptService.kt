@@ -21,6 +21,7 @@ class PromptService(
     private val servedPromptRepoIdProvider: ServedPromptRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,
     private val chatProcessor: ChatProcessor,
+    private val chatIdProvider: ChatIdProviding
 ) {
     private data class PreparedChat(
         val filledPrompt: String, val secret: String, val config: PromptConfig, val chatId: String
@@ -31,12 +32,13 @@ class PromptService(
     ): PreparedChat {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("Team not found")
         val prompt = promptRepository.get(promptIdProvider.id(teamId, promptId)) ?: throw Exception("Prompt not found")
-        val currentVersion = prompt.currentVersionData ?: throw Exception("No current version")
+        val currentVersion = prompt.currentVersionData ?: throw Exception("No current version data")
+        val currentVersionId = prompt.currentVersionId ?: throw Exception("No current version id")
         val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")
         val secret = encryptionProvider.decrypt(encryptedSecret)
 
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
-        val newChatId = chatId ?: UUID.randomUUID().toString()
+        val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId)
 
         val servedPrompt = ServedPrompt(filledPrompt, newChatId)
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, promptId, null)

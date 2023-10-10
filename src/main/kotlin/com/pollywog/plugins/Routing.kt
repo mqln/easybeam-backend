@@ -26,12 +26,12 @@ fun Application.configureRouting() {
     routing {
         route("/api") {
             val promptService = PromptService(
-                promptRepository = FirestoreRepository(Prompt.serializer()),
-                servedPromptRepository = FirestoreRepository(ServedPrompt.serializer()),
+                promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
+                servedPromptRepository = FirestoreRepository(serializer = ServedPrompt.serializer()),
                 promptIdProvider = FirestorePromptIdProvider(),
                 servedPromptRepoIdProvider = FirestoreServedPromptRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
-                teamRepository = FirestoreRepository(Team.serializer()),
+                teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
                 chatProcessor = OpenAIChatProcessor(),
                 chatIdProvider = ChatIdProvider()
@@ -40,33 +40,33 @@ fun Application.configureRouting() {
 
             val tokenService = TokenService(
                 tokenProvider = JWTTokenProvider(jwtConfig),
-                teamRepository = FirestoreRepository(Team.serializer()),
+                teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider()
             )
             tokenRouting(tokenService = tokenService)
 
             val teamService = TeamService(
-                teamRepository = FirestoreRepository(Team.serializer()),
+                teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret)
             )
             teamRouting(teamService = teamService)
 
             val promptTestService = PromptTestService(
-                promptTestRunRepo = FirestoreRepository(PromptTestRun.serializer()),
+                promptTestRunRepo = FirestoreRepository(serializer = PromptTestRun.serializer()),
                 promptTestIdProvider = FirestorePromptTestRunIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
-                teamRepository = FirestoreRepository(Team.serializer()),
+                teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
                 chatProcessor = OpenAIChatProcessor()
             )
             promptTestsRouting(promptTestService = promptTestService)
 
             val reviewService = ReviewService(
-                reviewRepo = FirestoreRepository(Review.serializer()),
+                reviewRepo = FirestoreRepository(serializer = Review.serializer()),
                 reviewIdProvider = FirebaseReviewIdProvider(),
                 chatIdProvider = ChatIdProvider(),
-                versionRepo = FirestoreRepository(PromptVersion.serializer()),
+                versionRepo = FirestoreRepository(serializer = PromptVersion.serializer()),
                 versionIdProvider = FirestorePromptVersionIdProvider()
             )
             reviewRouting(reviewService = reviewService)

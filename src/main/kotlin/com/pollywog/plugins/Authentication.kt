@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 fun Application.configureAuthentication() {
     val logger = LoggerFactory.getLogger(TokenService::class.java)
     val jwtConfig = getJWTConfig()
-    val authService = AuthService(FirestoreRepository(Team.serializer()))
+    val authService = AuthService(FirestoreRepository(serializer = Team.serializer()))
     install(Authentication) {
         bearer("auth-bearer") {
             realm = "Access to the '/' path"
@@ -25,7 +25,7 @@ fun Application.configureAuthentication() {
                     val decoded = FirebaseAdmin.auth.verifyIdToken(tokenCredential.token)
                     LoggerFactory.getLogger(TokenService::class.java).info("Authed ${decoded.uid}")
                     UserIdPrincipal(decoded.uid)
-                } catch(e: Error) {
+                } catch (e: Error) {
                     null
                 }
             }
@@ -34,15 +34,12 @@ fun Application.configureAuthentication() {
         jwt("auth-jwt") {
             realm = jwtConfig.realm
             verifier(
-                JWT
-                .require(Algorithm.HMAC256(jwtConfig.secret))
-                .withAudience(jwtConfig.audience)
-                .withIssuer(jwtConfig.issuer)
-                .build())
+                JWT.require(Algorithm.HMAC256(jwtConfig.secret)).withAudience(jwtConfig.audience)
+                    .withIssuer(jwtConfig.issuer).build()
+            )
             validate { credential ->
                 val teamId = credential.payload.getClaim("teamId").asString()
                 val tokenId = credential.payload.getClaim("tokenId").asString()
-
                 if (authService.validate(tokenId, teamId)) {
                     JWTPrincipal(credential.payload)
                 } else {

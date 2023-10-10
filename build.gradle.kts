@@ -42,6 +42,7 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:$ktor_version")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
     implementation("com.aallam.openai:openai-client:3.4.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")

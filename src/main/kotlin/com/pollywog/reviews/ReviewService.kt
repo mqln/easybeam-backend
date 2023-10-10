@@ -37,6 +37,7 @@ class ReviewService(
         val reviews =
             reviewRepo.getList(reviewIdProvider.path(teamId, decodedChatId.promptId, decodedChatId.versionId, chatId))
         val averageScore = reviews.map { it.score }.average()
+        // TODO: This needs to be optimized, will puke over time
         versionRepo.update(
             versionIdProvider.id(teamId, decodedChatId.promptId, decodedChatId.versionId),
             mapOf("averageScore" to averageScore)

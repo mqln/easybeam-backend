@@ -7,14 +7,14 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.cloud.firestore.FirestoreOptions
 import com.google.cloud.firestore.SetOptions
+import com.google.common.reflect.TypeToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.*
 import com.pollywog.plugins.sharedJson
-import kotlinx.serialization.KSerializer
 import java.util.Date
 import kotlinx.datetime.Instant
-import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.isAccessible
+import kotlinx.serialization.*
+import kotlinx.serialization.json.Json
 
 object FirebaseAdmin {
     val firestore: Firestore
@@ -42,18 +42,16 @@ class FirestoreRepository<T>(
             is Instant -> Timestamp.of(Date(obj.toEpochMilliseconds()))
             is List<*> -> obj.map { toFirestoreMap(it) }
             is Map<*, *> -> obj.entries.associate { (k, v) -> k.toString() to toFirestoreMap(v) }
-            is String, is Double, is Int, is Long, is Float, is Short, is Byte, is Char, is Boolean -> obj
-            else -> {
-                val properties = obj!!::class.memberProperties
-                val map = mutableMapOf<String, Any>()
-                for (property in properties) {
-                    property.isAccessible = true
-                    val value = property.getter.call(obj)
-                    if (value != null) {
-                        map[property.name] = toFirestoreMap(value)!!
-                    }
+            is String -> {
+                try {
+                    val instant = Instant.parse(obj)
+                    Timestamp.of(Date(instant.toEpochMilliseconds()))
+                } catch (e: Exception) {
+                    obj
                 }
-                map
+            }
+            else -> {
+                obj
             }
         }
     }
@@ -80,13 +78,21 @@ class FirestoreRepository<T>(
         }
     }
 
+    fun <T> toMapWithGson(json: Json, serializer: KSerializer<T>, data: T, gson: Gson): Map<String, Any> {
+        val jsonString = json.encodeToString(serializer, data)
+        val mapType = object : TypeToken<Map<String, Any>>() {}.type
+        return gson.fromJson(jsonString, mapType)
+    }
+
+
     override suspend fun update(id: String, data: Map<String, Any>) {
         val transformedData = toFirestoreMap(data) as Map<String, Any>
         firestore.document(id).set(transformedData, SetOptions.merge()).get()
     }
 
     override suspend fun set(id: String, data: T) {
-        val map = toFirestoreMap(data) as Map<String, Any>
+        val dataMap = toMapWithGson(sharedJson, serializer, data, gson)
+        val map = toFirestoreMap(dataMap) as Map<String, Any>
         firestore.document(id).set(map).get()
     }
 

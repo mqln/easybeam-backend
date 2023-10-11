@@ -1,7 +1,6 @@
 package com.pollywog.plugins
 
 import com.pollywog.common.FirestoreRepository
-import com.pollywog.common.Repository
 import com.pollywog.promptTests.FirestorePromptTestRunIdProvider
 import com.pollywog.promptTests.PromptTestRun
 import com.pollywog.promptTests.PromptTestService
@@ -27,7 +26,7 @@ fun Application.configureRouting() {
         route("/api") {
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
-                servedPromptRepository = FirestoreRepository(serializer = ServedPrompt.serializer()),
+                promptLogRepository = FirestoreRepository(serializer = PromptLog.serializer()),
                 promptIdProvider = FirestorePromptIdProvider(),
                 servedPromptRepoIdProvider = FirestoreServedPromptRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),

@@ -20,6 +20,7 @@ data class GetChatRequest(
     val chatId: String? = null,
     val messages: List<ChatInput>,
     val stream: Boolean,
+    val userId: String? = null
 )
 
 @Serializable
@@ -40,7 +41,12 @@ fun Route.promptRouting(promptService: PromptService) {
 
                 if (requestBody.stream) {
                     val processChatFlow = promptService.processChatFlow(
-                        teamId, promptId, requestBody.parameters, requestBody.chatId, requestBody.messages
+                        teamId = teamId,
+                        promptId = promptId,
+                        parameters = requestBody.parameters,
+                        chatId = requestBody.chatId,
+                        messages = requestBody.messages,
+                        userId = requestBody.userId
                     )
                     call.response.headers.append(HttpHeaders.ContentType, ContentType.Text.EventStream.toString())
 
@@ -49,7 +55,7 @@ fun Route.promptRouting(promptService: PromptService) {
                             val responseJson = Json.encodeToString(
                                 GetChatResponse(
                                     newMessage = processedChat.message,
-                                    chatId = processedChat.chatId
+                                    chatId = processedChat.chatId,
                                 )
                             )
                             write("data: $responseJson\n\n")
@@ -58,7 +64,12 @@ fun Route.promptRouting(promptService: PromptService) {
                     }
                 } else {
                     val processedChat = promptService.processChat(
-                        teamId, promptId, requestBody.parameters, requestBody.chatId, requestBody.messages
+                        teamId,
+                        promptId,
+                        requestBody.parameters,
+                        requestBody.chatId,
+                        requestBody.messages,
+                        requestBody.userId
                     )
                     call.respond(
                         GetChatResponse(

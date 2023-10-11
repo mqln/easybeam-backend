@@ -23,7 +23,7 @@ object FirebaseAdmin {
     init {
         val credentials: GoogleCredentials = GoogleCredentials.getApplicationDefault()
         val options: FirebaseOptions =
-            FirebaseOptions.Builder().setCredentials(credentials).setProjectId("pollywog-ai-dev").build()
+            FirebaseOptions.builder().setCredentials(credentials).setProjectId("pollywog-ai-dev").build()
 
         val app = FirebaseApp.initializeApp(options)
         firestore = FirestoreOptions.getDefaultInstance().service

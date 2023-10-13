@@ -15,4 +15,5 @@ data class PromptLog(
     val filledPrompt: String,
     val userId: String?,
     val createdAt: Instant,
+    val duration: Double
 )

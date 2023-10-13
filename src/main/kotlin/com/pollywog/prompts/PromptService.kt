@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
 import java.util.*
+import kotlin.time.DurationUnit
+import kotlin.time.measureTime
 
 data class ProcessedChat(
     val message: ChatInput, val chatId: String
@@ -58,6 +60,7 @@ class PromptService(
         response: ChatInput,
         preparedChat: PreparedChat,
         userId: String?,
+        duration: Double
     ) {
         val promptLog = PromptLog(
             filledPrompt = preparedChat.filledPrompt,
@@ -69,7 +72,8 @@ class PromptService(
             promptId = promptId,
             userId = userId,
             config = preparedChat.config,
-            configId = preparedChat.configId
+            configId = preparedChat.configId,
+            duration = duration
         )
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, null)
 
@@ -86,17 +90,20 @@ class PromptService(
         userId: String?
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
-
-        val response = chatProcessor.processChat(
-            preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
-        )
+        val response: ChatInput
+        val duration = measureTime {
+            response = chatProcessor.processChat(
+                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
+            )
+        }
         createLog(
             userId = userId,
             messages = messages,
             teamId = teamId,
             response = response,
             promptId = promptId,
-            preparedChat = preparedChat
+            preparedChat = preparedChat,
+            duration = duration.toDouble(DurationUnit.MILLISECONDS)
         )
         return ProcessedChat(
             message = response, chatId = preparedChat.chatId
@@ -113,18 +120,21 @@ class PromptService(
     ): Flow<ProcessedChat> {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
 
-        val responses = chatProcessor.processChatFlow(
-            preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
-        ).toList()
+        val (responses, duration) = measureTimeWithResult {
+            chatProcessor.processChatFlow(
+                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
+            ).toList()
+        }
 
         if (responses.isNotEmpty()) {
             createLog(
                 userId = userId,
-                messages = messages,
+                messages = messages + responses,
                 teamId = teamId,
                 response = responses.last(),
                 promptId = promptId,
-                preparedChat = preparedChat
+                preparedChat = preparedChat,
+                duration = duration
             )
         }
 
@@ -134,6 +144,13 @@ class PromptService(
                 chatId = preparedChat.chatId,
             )
         }
+    }
+    inline fun <T> measureTimeWithResult(block: () -> T): Pair<T, Double> {
+        var result: T
+        val duration = kotlin.time.measureTime {
+            result = block()
+        }
+        return result to duration.inWholeMilliseconds.toDouble()
     }
 
     private fun replacePlaceholders(prompt: String, replacements: Map<String, Any>): String {

@@ -6,15 +6,13 @@ import com.pollywog.authorization.AuthService
 import com.pollywog.common.FirebaseAdmin
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.teams.Team
-import com.pollywog.tokens.JWTConfig
-import com.pollywog.tokens.TokenService
+import com.pollywog.teams.JWTConfig
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import org.slf4j.LoggerFactory
 
 fun Application.configureAuthentication() {
-    val logger = LoggerFactory.getLogger(TokenService::class.java)
     val jwtConfig = getJWTConfig()
     val authService = AuthService(FirestoreRepository(serializer = Team.serializer()))
     install(Authentication) {
@@ -23,7 +21,6 @@ fun Application.configureAuthentication() {
             authenticate { tokenCredential ->
                 try {
                     val decoded = FirebaseAdmin.auth.verifyIdToken(tokenCredential.token)
-                    LoggerFactory.getLogger(TokenService::class.java).info("Authed ${decoded.uid}")
                     UserIdPrincipal(decoded.uid)
                 } catch (e: Error) {
                     null
@@ -43,7 +40,6 @@ fun Application.configureAuthentication() {
                 if (authService.validate(tokenId, teamId)) {
                     JWTPrincipal(credential.payload)
                 } else {
-                    logger.info("Can't validate token for team: $teamId, token: $tokenId")
                     null
                 }
             }

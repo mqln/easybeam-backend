@@ -3,40 +3,54 @@ package com.pollywog.teams
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
+class UnauthorizedException(message: String = "Unauthorized") : Exception(message)
+
 @Serializable
 data class AddSecretRequest(val secret: String, val key: String)
 
-@Serializable
-data class DeleteSecretRequest(val key: String)
 fun Route.teamRouting(teamService: TeamService) {
     authenticate("auth-bearer") {
-        post("team/{id?}/secret/add") {
-            val teamId = call.parameters["id"] ?: return@post call.respondText(
-                "Missing id",
-                status = HttpStatusCode.BadRequest
-            )
-            val requestBody = call.receive<AddSecretRequest>()
-            val userIdPrincipal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
-
-            teamService.addSecret(requestBody.secret, requestBody.key, teamId, userIdPrincipal.name)
-            call.respondText("Added ${requestBody.key}")
-        }
-
-        delete("team/{id?}/secret/delete") {
-            val teamId = call.parameters["id"] ?: return@delete call.respondText(
-                "Missing id",
-                status = HttpStatusCode.BadRequest
-            )
-            val requestBody = call.receive<DeleteSecretRequest>()
-            val userIdPrincipal = call.principal<UserIdPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
-
-            teamService.deleteSecret(requestBody.key, teamId, userIdPrincipal.name)
-            call.respondText("nice")
+        route("/team/{id}") {
+            route("secret") {
+                post() {
+                    val requestBody = call.receive<AddSecretRequest>()
+                    teamService.addSecret(
+                        secret = requestBody.secret,
+                        key = requestBody.key,
+                        teamId = call.teamId(),
+                        userId = call.userId()
+                    )
+                    call.respond(HttpStatusCode.Created, "Added ${requestBody.key}")
+                }
+                delete("{secretId}") {
+                    val secretId = call.parameters["secretId"] ?: return@delete call.respondText(
+                        "Missing tokenId", status = HttpStatusCode.BadRequest
+                    )
+                    teamService.deleteSecret(key = secretId, teamId = call.teamId(), userId = call.userId())
+                    call.respond(HttpStatusCode.NoContent)
+                }
+            }
+            route("token") {
+                post() {
+                    call.respond(HttpStatusCode.Created, teamService.generateAndSaveToken(call.userId(), call.teamId()))
+                }
+                delete("{tokenId}") {
+                    val tokenId = call.parameters["tokenId"] ?: return@delete call.respondText(
+                        "Missing tokenId", status = HttpStatusCode.BadRequest
+                    )
+                    teamService.revokeToken(call.userId(), call.teamId(), tokenId)
+                    call.respond(HttpStatusCode.NoContent)
+                }
+            }
         }
     }
 }
+
+fun ApplicationCall.teamId(): String = parameters["id"] ?: throw BadRequestException("Missing team id")
+fun ApplicationCall.userId(): String = principal<UserIdPrincipal>()?.name ?: throw UnauthorizedException()

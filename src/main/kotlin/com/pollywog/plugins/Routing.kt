@@ -13,9 +13,7 @@ import com.pollywog.reviews.reviewRouting
 import com.pollywog.teams.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
-import com.pollywog.tokens.JWTTokenProvider
-import com.pollywog.tokens.TokenService
-import com.pollywog.tokens.tokenRouting
+import com.pollywog.teams.JWTTokenProvider
 
 fun Application.configureRouting() {
     val aesConfig = environment!!.config.config("aes")
@@ -39,17 +37,11 @@ fun Application.configureRouting() {
             )
             promptRouting(promptService = promptService)
 
-            val tokenService = TokenService(
-                tokenProvider = JWTTokenProvider(jwtConfig),
-                teamRepository = FirestoreRepository(serializer = Team.serializer()),
-                teamRepoIdProvider = FirestoreTeamRepoIdProvider()
-            )
-            tokenRouting(tokenService = tokenService)
-
             val teamService = TeamService(
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
-                encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret)
+                encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
+                tokenProvider = JWTTokenProvider(jwtConfig),
             )
             teamRouting(teamService = teamService)
 

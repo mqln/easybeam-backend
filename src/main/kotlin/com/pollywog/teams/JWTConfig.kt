@@ -1,4 +1,4 @@
-package com.pollywog.tokens
+package com.pollywog.teams
 
 data class JWTConfig (
     val issuer: String,

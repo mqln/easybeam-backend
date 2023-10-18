@@ -87,7 +87,7 @@ class FirestoreRepository<T>(
 
     override suspend fun update(id: String, data: Map<String, Any>) {
         val transformedData = toFirestoreMap(data) as Map<String, Any>
-        firestore.document(id).set(transformedData, SetOptions.merge()).get()
+        firestore.document(id).update(transformedData).get()
     }
 
     override suspend fun set(id: String, data: T) {
@@ -99,8 +99,7 @@ class FirestoreRepository<T>(
     override suspend fun getList(path: String): List<T> {
         val collection = firestore.collection(path).get().get()
         return collection.documents.map {
-            val data = it.data!!
-            val transformedData = fromFirestoreMap(data)
+            val transformedData = fromFirestoreMap(it.data)
             val jsonString = gson.toJson(transformedData)
             sharedJson.decodeFromString(serializer, jsonString)
         }

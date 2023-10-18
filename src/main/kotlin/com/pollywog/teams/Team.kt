@@ -1,6 +1,5 @@
 package com.pollywog.teams
 
-import com.pollywog.tokens.Token
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

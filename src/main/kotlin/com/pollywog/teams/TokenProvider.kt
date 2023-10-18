@@ -1,17 +1,14 @@
-package com.pollywog.tokens
+package com.pollywog.teams
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import org.slf4j.LoggerFactory
 import java.util.Date
 
-interface TokenProvider {
+interface TokenProviding {
     fun createToken(userId: String, teamId: String, tokenId: String): String
 }
-class JWTTokenProvider(private val jwtConfig: JWTConfig): TokenProvider {
-    private val logger = LoggerFactory.getLogger(TokenService::class.java)
-
+class JWTTokenProvider(private val jwtConfig: JWTConfig): TokenProviding {
     override fun createToken(userId: String, teamId: String, tokenId: String): String {
-        logger.info("Creating JWT")
         return JWT.create()
             .withAudience(jwtConfig.audience)
             .withIssuer(jwtConfig.issuer)

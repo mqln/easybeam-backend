@@ -1,6 +1,5 @@
 package com.pollywog.prompts
 
-import com.pollywog.tokens.TokenService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -27,7 +26,6 @@ data class GetChatRequest(
 data class GetChatResponse(val newMessage: ChatInput, val chatId: String)
 
 fun Route.promptRouting(promptService: PromptService) {
-    val logger = LoggerFactory.getLogger(TokenService::class.java)
     authenticate("auth-jwt") {
         route("chat") {
             get("{id?}") {
@@ -36,7 +34,6 @@ fun Route.promptRouting(promptService: PromptService) {
                 val promptId = call.parameters["id"] ?: return@get call.respondText(
                     "Missing id", status = HttpStatusCode.BadRequest
                 )
-                logger.info("Serving prompt $promptId for $teamId")
                 val requestBody = call.receive<GetChatRequest>()
 
                 if (requestBody.stream) {

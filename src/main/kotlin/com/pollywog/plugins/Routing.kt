@@ -33,7 +33,9 @@ fun Application.configureRouting() {
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
                 chatProcessor = OpenAIChatProcessor(),
-                chatIdProvider = ChatIdProvider()
+                chatIdProvider = ChatIdProvider(),
+                abTestRepository = FirestoreRepository(serializer = PromptABTest.serializer()),
+                abTestIdProvider = FirestorePromptABTestIdProvider()
             )
             promptRouting(promptService = promptService)
 

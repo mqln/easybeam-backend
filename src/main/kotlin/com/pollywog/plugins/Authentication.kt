@@ -5,12 +5,12 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.pollywog.authorization.AuthService
 import com.pollywog.common.FirebaseAdmin
 import com.pollywog.common.FirestoreRepository
+import com.pollywog.errors.UnauthorizedActionException
 import com.pollywog.teams.Team
 import com.pollywog.teams.JWTConfig
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import org.slf4j.LoggerFactory
 
 fun Application.configureAuthentication() {
     val jwtConfig = getJWTConfig()
@@ -22,8 +22,8 @@ fun Application.configureAuthentication() {
                 try {
                     val decoded = FirebaseAdmin.auth.verifyIdToken(tokenCredential.token)
                     UserIdPrincipal(decoded.uid)
-                } catch (e: Error) {
-                    null
+                } catch (e: Exception) {
+                    throw UnauthorizedActionException("Token invalid")
                 }
             }
         }

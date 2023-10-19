@@ -1,5 +1,6 @@
 package com.pollywog.teams
 
+import com.pollywog.errors.UnauthorizedActionException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -9,10 +10,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
-class UnauthorizedException(message: String = "Unauthorized") : Exception(message)
-
 @Serializable
 data class AddSecretRequest(val secret: String, val key: String)
+@Serializable
+data class AddInviteRequest(val email: String, val role: TeamRole)
 
 fun Route.teamRouting(teamService: TeamService) {
     authenticate("auth-bearer") {
@@ -30,7 +31,7 @@ fun Route.teamRouting(teamService: TeamService) {
                 }
                 delete("{secretId}") {
                     val secretId = call.parameters["secretId"] ?: return@delete call.respondText(
-                        "Missing tokenId", status = HttpStatusCode.BadRequest
+                        "Missing secretId", status = HttpStatusCode.BadRequest
                     )
                     teamService.deleteSecret(key = secretId, teamId = call.teamId(), userId = call.userId())
                     call.respond(HttpStatusCode.NoContent)
@@ -48,9 +49,19 @@ fun Route.teamRouting(teamService: TeamService) {
                     call.respond(HttpStatusCode.NoContent)
                 }
             }
+            route("invite") {
+                post() {
+                    val requestBody = call.receive<AddInviteRequest>()
+                    val invite = teamService.invite(call.userId(), call.teamId(), requestBody.email, requestBody.role)
+                    call.respond(HttpStatusCode.Created, invite)
+                }
+                put("{inviteId}/validate") {
+                    call.respond(HttpStatusCode.NoContent)
+                }
+            }
         }
     }
 }
 
 fun ApplicationCall.teamId(): String = parameters["id"] ?: throw BadRequestException("Missing team id")
-fun ApplicationCall.userId(): String = principal<UserIdPrincipal>()?.name ?: throw UnauthorizedException()
+fun ApplicationCall.userId(): String = principal<UserIdPrincipal>()?.name ?: throw UnauthorizedActionException("Invalid Token")

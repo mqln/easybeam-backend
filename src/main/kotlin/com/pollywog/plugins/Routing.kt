@@ -42,7 +42,10 @@ fun Application.configureRouting() {
                 teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 tokenProvider = JWTTokenProvider(jwtConfig),
-            )
+                inviteRepository = FirestoreRepository(serializer = Invite.serializer()),
+                inviteIdProvider = FirestoreInviteIdProvider(),
+
+                )
             teamRouting(teamService = teamService)
 
             val promptTestService = PromptTestService(

@@ -23,18 +23,18 @@ class TeamService(
         team.checkAuthorized(userId, TeamRole.EDITOR)
 
         val encrypted = encryptionProvider.encrypt(secret)
-        val newSecrets = team.secrets.plus(Pair(key, encrypted))
-
-        teamRepository.update(teamRepoIdProvider.id(teamId), mapOf("secrets" to newSecrets))
+        val secrets = team.secrets.plus(Pair(key, encrypted))
+        val updatedTeam = team.copy(secrets = secrets)
+        teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
 
     suspend fun deleteSecret(key: String, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
         team.checkAuthorized(userId, TeamRole.EDITOR)
 
-        val updatedSecrets = team.secrets.filter { it.key != key }.plus(Pair("fart", "poop"))
-
-        teamRepository.update(teamRepoIdProvider.id(teamId), mapOf("secrets" to updatedSecrets))
+        val secrets = team.secrets.filter { it.key != key }
+        val updatedTeam = team.copy(secrets = secrets)
+        teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
 
     suspend fun generateAndSaveToken(userId: String, teamId: String): Token {
@@ -45,7 +45,8 @@ class TeamService(
         team.checkAuthorized(userId, TeamRole.EDITOR)
 
         val updatedActiveTokens = team.activeTokens + token
-        teamRepository.update(teamRepoIdProvider.id(teamId), mapOf("activeTokens" to updatedActiveTokens))
+        val updatedTeam = team.copy(activeTokens = updatedActiveTokens)
+        teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
 
         return token
     }
@@ -55,11 +56,9 @@ class TeamService(
         team.checkAuthorized(userId, TeamRole.EDITOR)
         val activeTokens = team.activeTokens.filter { it.id != tokenId }
         val revokedTokens = team.revokedTokens + team.activeTokens.filter { it.id == tokenId }
-        teamRepository.update(
-            teamRepoIdProvider.id(teamId), mapOf(
-                "activeTokens" to activeTokens,
-                "revokedTokens" to revokedTokens,
-            )
+        val updatedTeam = team.copy(activeTokens = activeTokens, revokedTokens = revokedTokens)
+        teamRepository.set(
+            teamRepoIdProvider.id(teamId), updatedTeam
         )
         return
     }
@@ -85,12 +84,16 @@ class TeamService(
     }
 
     suspend fun acceptInvite(userId: String, teamId: String) {
-        val user =
-            userRepository.get(userIdProvider.id(userId)) ?: throw UnauthorizedActionException("Not invited")
-        val invite = inviteRepository.get(inviteIdProvider.id(teamId, user.email)) ?: throw UnauthorizedActionException("Not invited")
+        val user = userRepository.get(userIdProvider.id(userId)) ?: throw UnauthorizedActionException("Not invited")
+        val invite = inviteRepository.get(inviteIdProvider.id(teamId, user.email)) ?: throw UnauthorizedActionException(
+            "Not invited"
+        )
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw UnauthorizedActionException("Not invited")
-        if (invite.expiration > Clock.System.now()) throw UnauthorizedActionException("Invite expired")
+        if (invite.expiration < Clock.System.now()) throw UnauthorizedActionException("Invite expired")
         val members = team.members.plus(Pair(userId, Member(invite.role, true)))
-        teamRepository.update(teamRepoIdProvider.id(teamId), mapOf("members" to members))
+        val updatedTeam = team.copy(members = members)
+        val updatedInvite = invite.copy(accepted = true)
+        teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
+        inviteRepository.set(inviteIdProvider.id(teamId, user.email), updatedInvite)
     }
 }

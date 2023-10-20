@@ -6,7 +6,6 @@ import com.google.cloud.Timestamp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.cloud.firestore.FirestoreOptions
-import com.google.cloud.firestore.SetOptions
 import com.google.common.reflect.TypeToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.*
@@ -82,12 +81,6 @@ class FirestoreRepository<T>(
         val jsonString = json.encodeToString(serializer, data)
         val mapType = object : TypeToken<Map<String, Any>>() {}.type
         return gson.fromJson(jsonString, mapType)
-    }
-
-
-    override suspend fun update(id: String, data: Map<String, Any>) {
-        val transformedData = toFirestoreMap(data) as Map<String, Any>
-        firestore.document(id).update(transformedData).get()
     }
 
     override suspend fun set(id: String, data: T) {

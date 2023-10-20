@@ -29,12 +29,11 @@ class PromptTestService(
             val secret = fetchAndDecryptSecret(team, newTestRun.configId)
 
             processChatFlowAndUpdateRepo(newTestRun, secret, testRunRepoId)
-            promptTestRunRepo.update(testRunRepoId, mapOf("status" to TestRunStatus.COMPLETED))
+            val updatedTestRun = newTestRun.copy( status = TestRunStatus.COMPLETED)
+            promptTestRunRepo.set(testRunRepoId, updatedTestRun)
         } catch (error: Exception) {
-            promptTestRunRepo.update(testRunRepoId, mapOf(
-                "errorMessage" to (error.message ?: "Unknown"),
-                "status" to TestRunStatus.ERROR
-            ))
+            val updatedTestRun = newTestRun.copy( status = TestRunStatus.ERROR, errorMessage = error.message ?: "Unknown")
+            promptTestRunRepo.set(testRunRepoId, updatedTestRun)
         }
     }
 
@@ -67,7 +66,8 @@ class PromptTestService(
             messages = promptTestRun.messages
         )
         result.collect {
-            promptTestRunRepo.update(testRunRepoId, mapOf("result" to it.content))
+            val finalUpdate = updatedTestRun.copy(result = it.content)
+            promptTestRunRepo.set(testRunRepoId, finalUpdate)
         }
     }
 }

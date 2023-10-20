@@ -90,6 +90,7 @@ class TeamService(
         )
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw UnauthorizedActionException("Not invited")
         if (invite.expiration < Clock.System.now()) throw UnauthorizedActionException("Invite expired")
+        if (invite.accepted) throw UnauthorizedActionException("Already accepted")
         val members = team.members.plus(Pair(userId, Member(invite.role, true)))
         val updatedTeam = team.copy(members = members)
         val updatedInvite = invite.copy(accepted = true)

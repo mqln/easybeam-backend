@@ -2,11 +2,10 @@ package com.pollywog.teams
 
 import com.pollywog.common.Repository
 import com.pollywog.errors.ConflictException
+import com.pollywog.errors.UnauthorizedActionException
 import kotlinx.datetime.Clock
 import java.util.*
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
-import kotlin.time.DurationUnit
 
 class TeamService(
     private val teamRepository: Repository<Team>,
@@ -15,6 +14,9 @@ class TeamService(
     private val tokenProvider: TokenProviding,
     private val inviteRepository: Repository<Invite>,
     private val inviteIdProvider: InviteIdProviding,
+    private val emailProvider: EmailProviding,
+    private val userRepository: Repository<User>,
+    private val userIdProvider: UserIdProviding
 ) {
     suspend fun addSecret(secret: String, key: String, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
@@ -72,13 +74,23 @@ class TeamService(
                 throw ConflictException("Valid invite already exists")
             }
         }
+        // TODO: Don't invite existing members
 
         val newInvite = Invite(
             email = inviteEmail, role = inviteRole, expiration = Clock.System.now().plus(30.days), accepted = false
         )
-
         inviteRepository.set(inviteId, newInvite)
-
+        emailProvider.sendInvite(inviteEmail)
         return newInvite
+    }
+
+    suspend fun acceptInvite(userId: String, teamId: String) {
+        val user =
+            userRepository.get(userIdProvider.id(userId)) ?: throw UnauthorizedActionException("Not invited")
+        val invite = inviteRepository.get(inviteIdProvider.id(teamId, user.email)) ?: throw UnauthorizedActionException("Not invited")
+        val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw UnauthorizedActionException("Not invited")
+        if (invite.expiration > Clock.System.now()) throw UnauthorizedActionException("Invite expired")
+        val members = team.members.plus(Pair(userId, Member(invite.role, true)))
+        teamRepository.update(teamRepoIdProvider.id(teamId), mapOf("members" to members))
     }
 }

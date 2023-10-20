@@ -13,7 +13,8 @@ data class Team(
     val secrets: Map<String, String> = emptyMap()
 ) {
     fun checkAuthorized(userId: String, requiredRole: TeamRole) {
-        if (members[userId]?.role != requiredRole) {
+        val foundRole = members[userId]?.role ?: throw UnauthorizedActionException("You don't have this level of team access")
+        if (foundRole.ordinal > requiredRole.ordinal) {
             throw UnauthorizedActionException("You don't have this level of team access")
         }
     }

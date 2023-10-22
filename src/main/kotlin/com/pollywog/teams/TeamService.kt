@@ -79,7 +79,7 @@ class TeamService(
             email = inviteEmail, role = inviteRole, expiration = Clock.System.now().plus(30.days), accepted = false
         )
         inviteRepository.set(inviteId, newInvite)
-        emailProvider.sendInvite(inviteEmail)
+        emailProvider.sendTeamInvite(inviteEmail, teamId)
         return newInvite
     }
 

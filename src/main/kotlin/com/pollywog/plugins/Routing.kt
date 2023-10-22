@@ -16,10 +16,12 @@ import io.ktor.server.routing.*
 import com.pollywog.teams.JWTTokenProvider
 
 fun Application.configureRouting() {
-    val aesConfig = environment!!.config.config("aes")
+    val config = environment!!.config
+    val aesConfig = config.config("aes")
     val encryptionSecret = aesConfig.property("serverSecret").getString()
     val decryptionSecret = aesConfig.property("clientSecret").getString()
     val jwtConfig = getJWTConfig()
+    val emailApiKey = config.config("email").property("apiKey").getString()
     routing {
         route("/api") {
             val promptService = PromptService(
@@ -44,7 +46,7 @@ fun Application.configureRouting() {
                 tokenProvider = JWTTokenProvider(jwtConfig),
                 inviteRepository = FirestoreRepository(serializer = Invite.serializer()),
                 inviteIdProvider = FirestoreInviteIdProvider(),
-                emailProvider = EmailProvider,
+                emailProvider = EmailProvider(emailApiKey = emailApiKey),
                 userIdProvider = FirestoreUserIdProvider,
                 userRepository = FirestoreRepository(serializer = User.serializer())
             )

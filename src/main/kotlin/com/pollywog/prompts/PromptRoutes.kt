@@ -28,10 +28,10 @@ data class GetChatResponse(val newMessage: ChatInput, val chatId: String)
 fun Route.promptRouting(promptService: PromptService) {
     authenticate("auth-jwt") {
         route("chat") {
-            get("{id?}") {
+            post("{id?}") {
                 val principal = call.principal<JWTPrincipal>()
                 val teamId = principal!!.payload.getClaim("teamId").asString()
-                val promptId = call.parameters["id"] ?: return@get call.respondText(
+                val promptId = call.parameters["id"] ?: return@post call.respondText(
                     "Missing id", status = HttpStatusCode.BadRequest
                 )
                 val requestBody = call.receive<GetChatRequest>()

@@ -1,6 +1,7 @@
 package com.pollywog.plugins
 
 import com.pollywog.common.FirestoreRepository
+import com.pollywog.common.RedisRepository
 import com.pollywog.promptTests.FirestorePromptTestRunIdProvider
 import com.pollywog.promptTests.PromptTestRun
 import com.pollywog.promptTests.PromptTestService
@@ -14,6 +15,7 @@ import com.pollywog.teams.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import com.pollywog.teams.JWTTokenProvider
+import redis.clients.jedis.Jedis
 
 fun Application.configureRouting() {
     val config = environment!!.config
@@ -22,16 +24,22 @@ fun Application.configureRouting() {
     val decryptionSecret = aesConfig.property("clientSecret").getString()
     val jwtConfig = getJWTConfig()
     val emailApiKey = config.config("email").property("apiKey").getString()
+    val redisClient = Jedis("10.17.84.163", 6379)
+    val redisTeamRepo = RedisRepository(redisClient, Team.serializer())
+    val redisPromptRepo = RedisRepository(redisClient, Prompt.serializer())
+    val redisTeamIdProvider = RedisTeamRepoIdProvider()
+    val redisPromptIdProvider = RedisPromptIdProvider()
+
     routing {
         route("/api") {
             val promptService = PromptService(
-                promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
+                promptRepository = redisPromptRepo,
+                promptIdProvider = redisPromptIdProvider,
                 promptLogRepository = FirestoreRepository(serializer = PromptLog.serializer()),
-                promptIdProvider = FirestorePromptIdProvider(),
                 servedPromptRepoIdProvider = FirestoreServedPromptRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
-                teamRepository = FirestoreRepository(serializer = Team.serializer()),
-                teamRepoIdProvider = FirestoreTeamRepoIdProvider(),
+                teamRepository = redisTeamRepo,
+                teamRepoIdProvider = redisTeamIdProvider,
                 chatProcessor = OpenAIChatProcessor(),
                 chatIdProvider = ChatIdProvider(),
                 abTestRepository = FirestoreRepository(serializer = PromptABTest.serializer()),

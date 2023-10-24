@@ -48,6 +48,7 @@ dependencies {
     implementation("io.ktor:ktor-client-serialization:$ktor_version")
     implementation("io.ktor:ktor-client-logging-jvm:2.3.3")
     implementation("io.ktor:ktor-client-auth:2.3.3")
+    implementation("redis.clients:jedis:5.0.2")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")

@@ -7,3 +7,7 @@ interface TeamRepoIdProvider {
 class FirestoreTeamRepoIdProvider: TeamRepoIdProvider {
     override fun id(teamId: String): String = "teams/$teamId"
 }
+
+class RedisTeamRepoIdProvider: TeamRepoIdProvider {
+    override fun id(teamId: String): String = "teams:$teamId"
+}

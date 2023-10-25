@@ -1,13 +1,13 @@
 package com.pollywog.teams
 
-interface TeamRepoIdProvider {
+interface TeamIdProvider {
     fun id(teamId: String): String
 }
 
-class FirestoreTeamRepoIdProvider: TeamRepoIdProvider {
+class FirestoreTeamIdProvider: TeamIdProvider {
     override fun id(teamId: String): String = "teams/$teamId"
 }
 
-class RedisTeamRepoIdProvider: TeamRepoIdProvider {
+class RedisTeamIdProvider: TeamIdProvider {
     override fun id(teamId: String): String = "teams:$teamId"
 }

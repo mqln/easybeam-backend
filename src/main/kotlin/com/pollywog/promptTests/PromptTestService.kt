@@ -4,7 +4,7 @@ import com.pollywog.common.Repository
 import com.pollywog.prompts.ChatProcessor
 import com.pollywog.teams.EncryptionProvider
 import com.pollywog.teams.Team
-import com.pollywog.teams.TeamRepoIdProvider
+import com.pollywog.teams.TeamIdProvider
 import kotlinx.datetime.Clock
 
 class TeamNotFoundException(teamId: String) : Exception("No team with ID: $teamId found")
@@ -13,7 +13,7 @@ class SecretNotFoundException(key: String) : Exception("No secret for ${key}. Se
 
 class PromptTestService(
     private val teamRepository: Repository<Team>,
-    private val teamRepoIdProvider: TeamRepoIdProvider,
+    private val teamRepoIdProvider: TeamIdProvider,
     private val promptTestRunRepo: Repository<PromptTestRun>,
     private val promptTestIdProvider: PromptTestRunRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,

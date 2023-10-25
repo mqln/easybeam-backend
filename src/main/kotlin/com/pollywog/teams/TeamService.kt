@@ -9,7 +9,7 @@ import kotlin.time.Duration.Companion.days
 
 class TeamService(
     private val teamRepository: Repository<Team>,
-    private val teamRepoIdProvider: TeamRepoIdProvider,
+    private val teamRepoIdProvider: TeamIdProvider,
     private val encryptionProvider: EncryptionProvider,
     private val tokenProvider: TokenProviding,
     private val inviteRepository: Repository<Invite>,

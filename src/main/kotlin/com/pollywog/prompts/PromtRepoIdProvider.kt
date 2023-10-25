@@ -1,13 +1,13 @@
 package com.pollywog.prompts
 
-interface PromptRepoIdProvider {
+interface PromptIdProvider {
     fun id(teamId: String, promptId: String): String
 }
 
-class FirestorePromptIdProvider: PromptRepoIdProvider {
+class FirestorePromptIdProvider: PromptIdProvider {
     override fun id(teamId: String, promptId: String) = "teams/$teamId/prompts/$promptId"
 }
 
-class RedisPromptIdProvider: PromptRepoIdProvider {
+class RedisPromptIdProvider: PromptIdProvider {
     override fun id(teamId: String, promptId: String) = "teams:$teamId:prompts:$promptId"
 }

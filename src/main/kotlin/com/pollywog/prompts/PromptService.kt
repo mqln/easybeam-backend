@@ -1,9 +1,11 @@
 package com.pollywog.prompts
 
+import com.pollywog.common.Cache
 import com.pollywog.common.Repository
 import com.pollywog.teams.EncryptionProvider
 import com.pollywog.teams.Team
-import com.pollywog.teams.TeamRepoIdProvider
+import com.pollywog.teams.TeamIdProvider
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -20,10 +22,14 @@ data class ProcessedChat(
 
 class PromptService(
     private val promptRepository: Repository<Prompt>,
+    private val promptRepoIdProvider: PromptIdProvider,
+    private val promptCache: Cache<Prompt>,
+    private val promptCacheIdProvider: PromptIdProvider,
     private val teamRepository: Repository<Team>,
+    private val teamRepoIdProvider: TeamIdProvider,
+    private val teamCache: Cache<Team>,
+    private val teamCacheIdProvider: TeamIdProvider,
     private val promptLogRepository: Repository<PromptLog>,
-    private val promptIdProvider: PromptRepoIdProvider,
-    private val teamRepoIdProvider: TeamRepoIdProvider,
     private val servedPromptRepoIdProvider: ServedPromptRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,
     private val chatProcessor: ChatProcessor,
@@ -67,15 +73,32 @@ class PromptService(
 
         val updatedABTest = abTest.copy(endedAt = calculatedEnd)
         val updatedPrompt = prompt.copy(currentABTest = null, currentABTestId = null)
-        promptRepository.set(promptIdProvider.id(teamId, promptId), updatedPrompt)
+        promptRepository.set(promptRepoIdProvider.id(teamId, promptId), updatedPrompt)
         abTestRepository.set(abTestIdProvider.id(teamId, promptId, abTestId), updatedABTest)
     }
 
     private suspend fun prepareChat(
         teamId: String, promptId: String, parameters: Map<String, Any>, chatId: String?
-    ): PreparedChat {
-        val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("Team not found")
-        val prompt = promptRepository.get(promptIdProvider.id(teamId, promptId)) ?: throw Exception("Prompt not found")
+    ): PreparedChat = coroutineScope {
+        val teamAsync = async {
+            teamCache.get(teamCacheIdProvider.id(teamId)) ?: teamRepository.get(teamRepoIdProvider.id(teamId))?.also {
+                launch {
+                    teamCache.set(teamCacheIdProvider.id(teamId), it)
+                }
+            } ?: throw Exception("Team not found")
+        }
+
+        val promptAsync = async {
+            promptCache.get(promptCacheIdProvider.id(teamId, promptId)) ?: promptRepository.get(promptRepoIdProvider.id(teamId, promptId))?.also {
+                launch {
+                    promptCache.set(promptCacheIdProvider.id(teamId, promptId), it)
+                }
+            } ?: throw Exception("Prompt not found")
+        }
+
+        val team = teamAsync.await()
+        val prompt = promptAsync.await()
+
         val (currentVersion, currentVersionId) = getCurrentVersion(prompt)
         val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")
         val secret = encryptionProvider.decrypt(encryptedSecret)
@@ -83,7 +106,7 @@ class PromptService(
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
         val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId, UUID.randomUUID().toString())
 
-        return PreparedChat(filledPrompt, currentVersionId, secret, currentVersion.config, newChatId, currentVersion.configId, prompt)
+        PreparedChat(filledPrompt, currentVersionId, secret, currentVersion.config, newChatId, currentVersion.configId, prompt)
     }
 
     private suspend fun cleanUp(
@@ -95,16 +118,20 @@ class PromptService(
         userId: String?,
         duration: Double,
     ) {
-        updatePromptData(preparedChat.prompt, teamId, promptId)
-        createLog(
-            userId = userId,
-            messages = messages,
-            teamId = teamId,
-            response = response,
-            promptId = promptId,
-            preparedChat = preparedChat,
-            duration = duration
-        )
+        coroutineScope {
+            launch {
+                updatePromptData(preparedChat.prompt, teamId, promptId)
+                createLog(
+                    userId = userId,
+                    messages = messages,
+                    teamId = teamId,
+                    response = response,
+                    promptId = promptId,
+                    preparedChat = preparedChat,
+                    duration = duration
+                )
+            }
+        }
     }
 
     private suspend fun createLog(
@@ -199,7 +226,7 @@ class PromptService(
             )
         }
     }
-    inline fun <T> measureTimeWithResult(block: () -> T): Pair<T, Double> {
+    private inline fun <T> measureTimeWithResult(block: () -> T): Pair<T, Double> {
         var result: T
         val duration = measureTime {
             result = block()

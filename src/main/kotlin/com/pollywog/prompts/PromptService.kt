@@ -89,6 +89,7 @@ class PromptService(
             teamCache.get(teamCacheIdProvider.id(teamId)) ?: teamRepository.get(teamRepoIdProvider.id(teamId))?.also {
                 launch {
                     teamCache.set(teamCacheIdProvider.id(teamId), it)
+                    logger.warn("Not using redis for team ${teamId}")
                 }
             } ?: throw Exception("Team not found")
         }
@@ -97,6 +98,7 @@ class PromptService(
             promptCache.get(promptCacheIdProvider.id(teamId, promptId)) ?: promptRepository.get(promptRepoIdProvider.id(teamId, promptId))?.also {
                 launch {
                     promptCache.set(promptCacheIdProvider.id(teamId, promptId), it)
+                    logger.warn("Not using redis for prompt ${teamId}/prompts/${promptId}")
                 }
             } ?: throw Exception("Prompt not found")
         }
@@ -106,7 +108,7 @@ class PromptService(
 
         val fetchDuration = System.currentTimeMillis() - fetchStart
 
-        logger.info("Data fetching took $fetchDuration ms") 
+        logger.info("Data fetching took $fetchDuration ms")
 
         val (currentVersion, currentVersionId) = getCurrentVersion(prompt)
         val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")

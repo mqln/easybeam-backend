@@ -20,7 +20,6 @@ data class RunPromptTestRequest(
 )
 
 fun Route.promptTestsRouting(promptTestService: PromptTestService) {
-    val logger = LoggerFactory.getLogger(this::class.java)
     authenticate("auth-bearer") {
         route("/prompt-tests") {
             post("/run") {

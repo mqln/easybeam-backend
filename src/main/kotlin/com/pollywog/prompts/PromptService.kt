@@ -2,6 +2,7 @@ package com.pollywog.prompts
 
 import com.pollywog.common.Cache
 import com.pollywog.common.Repository
+import com.pollywog.promptTests.promptTestsRouting
 import com.pollywog.teams.EncryptionProvider
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamIdProvider
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.Clock
+import org.slf4j.LoggerFactory
 import java.util.*
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
@@ -47,6 +49,8 @@ class PromptService(
         val prompt: Prompt
     )
 
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     private fun getCurrentVersion(prompt: Prompt): Pair<PromptVersion, String> {
         prompt.currentABTest?.takeIf { it.calculatedEnd?.let { end -> end > Clock.System.now() } == true }
             ?.let { abTest ->
@@ -80,6 +84,7 @@ class PromptService(
     private suspend fun prepareChat(
         teamId: String, promptId: String, parameters: Map<String, Any>, chatId: String?
     ): PreparedChat = coroutineScope {
+        val fetchStart = System.currentTimeMillis()
         val teamAsync = async {
             teamCache.get(teamCacheIdProvider.id(teamId)) ?: teamRepository.get(teamRepoIdProvider.id(teamId))?.also {
                 launch {
@@ -98,6 +103,10 @@ class PromptService(
 
         val team = teamAsync.await()
         val prompt = promptAsync.await()
+
+        val fetchDuration = System.currentTimeMillis() - fetchStart
+
+        logger.info("Data fetching took $fetchDuration ms") 
 
         val (currentVersion, currentVersionId) = getCurrentVersion(prompt)
         val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")
@@ -158,7 +167,6 @@ class PromptService(
         )
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, null)
 
-        // TODO: save on a different thread
         promptLogRepository.set(servedPromptRepoId, promptLog)
     }
 
@@ -172,11 +180,14 @@ class PromptService(
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
         val response: ChatInput
+        val processStart = System.currentTimeMillis()
         val duration = measureTime {
             response = chatProcessor.processChat(
                 preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
             )
         }
+        val processDuration = System.currentTimeMillis() - processStart
+        logger.info("Chat processing took $processDuration ms")
         cleanUp(
             userId = userId,
             messages = messages,

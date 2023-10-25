@@ -15,8 +15,8 @@ import com.pollywog.teams.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import com.pollywog.teams.JWTTokenProvider
-import redis.clients.jedis.Jedis
-
+import redis.clients.jedis.JedisPool
+import redis.clients.jedis.JedisPoolConfig
 fun Application.configureRouting() {
     val config = environment.config
     val aesConfig = config.config("aes")
@@ -27,21 +27,29 @@ fun Application.configureRouting() {
     val redisConfig = config.config("redis")
     val redisHost = redisConfig.property("host").getString()
     val redisPort = redisConfig.property("port").getString().toInt()
-    val redisClient = Jedis(redisHost, redisPort)
+    val poolConfig = JedisPoolConfig().apply {
+        maxTotal = 50
+        maxIdle = 10
+        minIdle = 5
+        testOnBorrow = true
+        testOnReturn = true
+        testWhileIdle = true
+    }
+    val jedisPool = JedisPool(poolConfig, redisHost, redisPort)
 
     routing {
         route("/api") {
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
                 promptRepoIdProvider = FirestorePromptIdProvider(),
-                promptCache = RedisCache(redisClient, Prompt.serializer()),
+                promptCache = RedisCache(jedisPool, Prompt.serializer()),
                 promptCacheIdProvider = RedisPromptIdProvider(),
                 promptLogRepository = FirestoreRepository(serializer = PromptLog.serializer()),
                 servedPromptRepoIdProvider = FirestoreServedPromptRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
-                teamCache = RedisCache(redisClient, Team.serializer()),
+                teamCache = RedisCache(jedisPool, Team.serializer()),
                 teamCacheIdProvider = RedisTeamIdProvider(),
                 chatProcessor = OpenAIChatProcessor(),
                 chatIdProvider = ChatIdProvider(),
@@ -82,5 +90,8 @@ fun Application.configureRouting() {
             )
             reviewRouting(reviewService = reviewService)
         }
+    }
+    environment.monitor.subscribe(ApplicationStopping) {
+        jedisPool.close()
     }
 }

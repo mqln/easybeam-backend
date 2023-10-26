@@ -28,11 +28,14 @@ class PromptTestService(
             validateUserMembership(userId, team)
             val secret = fetchAndDecryptSecret(team, newTestRun.configId)
 
-            processChatFlowAndUpdateRepo(newTestRun, secret, testRunRepoId)
-            val updatedTestRun = newTestRun.copy( status = TestRunStatus.COMPLETED)
+            val processedTestRun =
+                processChatFlowAndUpdateRepo(newTestRun, secret, testRunRepoId)
+            val updatedTestRun =
+                processedTestRun.copy(status = TestRunStatus.COMPLETED)
             promptTestRunRepo.set(testRunRepoId, updatedTestRun)
         } catch (error: Exception) {
-            val updatedTestRun = newTestRun.copy( status = TestRunStatus.ERROR, errorMessage = error.message ?: "Unknown")
+            val updatedTestRun =
+                newTestRun.copy(status = TestRunStatus.ERROR, errorMessage = error.message ?: "Unknown")
             promptTestRunRepo.set(testRunRepoId, updatedTestRun)
         }
     }
@@ -55,7 +58,7 @@ class PromptTestService(
         promptTestRun: PromptTestRun,
         secret: String,
         testRunRepoId: String
-    ) {
+    ): PromptTestRun {
         val updatedTestRun = promptTestRun.copy(status = TestRunStatus.IN_PROGRESS, createdAt = Clock.System.now())
         promptTestRunRepo.set(testRunRepoId, updatedTestRun)
 
@@ -65,9 +68,13 @@ class PromptTestService(
             config = promptTestRun.config,
             messages = promptTestRun.messages
         )
+
+        var finalUpdate: PromptTestRun? = null
         result.collect {
-            val finalUpdate = updatedTestRun.copy(result = it.content)
-            promptTestRunRepo.set(testRunRepoId, finalUpdate)
+            finalUpdate = updatedTestRun.copy(result = it.content)
+            promptTestRunRepo.set(testRunRepoId, finalUpdate!!)
         }
+        return finalUpdate!!
     }
+
 }

@@ -1,6 +1,7 @@
 package com.pollywog.teams
 
 import com.pollywog.errors.UnauthorizedActionException
+import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -10,7 +11,8 @@ data class Team(
     val activeTokens: List<Token> = emptyList(),
     val revokedTokens: List<Token> = emptyList(),
     val name: String,
-    val secrets: Map<String, String> = emptyMap()
+    val secrets: Map<String, String> = emptyMap(),
+    val subscription: Subscription
 ) {
     fun checkAuthorized(userId: String, requiredRole: TeamRole) {
         val foundRole = members[userId]?.role ?: throw UnauthorizedActionException("You don't have this level of team access")
@@ -39,4 +41,25 @@ enum class TeamRole {
 
     @SerialName("viewer")
     VIEWER,
+}
+
+@Serializable
+data class Subscription (
+    val subscriptionType: SubscriptionType,
+    val startedAt: Instant,
+)
+
+enum class SubscriptionType {
+
+    @SerialName("free")
+    FREE,
+
+    @SerialName("light")
+    LIGHT,
+
+    @SerialName("full")
+    FULL,
+
+    @SerialName("corporate")
+    CORPORATE,
 }

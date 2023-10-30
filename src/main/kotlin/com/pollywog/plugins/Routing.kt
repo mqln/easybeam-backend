@@ -1,5 +1,6 @@
 package com.pollywog.plugins
 
+import com.pollywog.common.FakeCache
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.common.RedisCache
 import com.pollywog.promptTests.FirestorePromptTestRunIdProvider
@@ -36,20 +37,23 @@ fun Application.configureRouting() {
         testWhileIdle = true
     }
     val jedisPool = JedisPool(poolConfig, redisHost, redisPort)
+    val isLocal = config.propertyOrNull("ktor.environment")?.getString()?.equals("local") ?: false
+    val promptCache = if (isLocal) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
+    val teamCache = if (isLocal) FakeCache(serializer = Team.serializer()) else RedisCache(jedisPool, Team.serializer())
 
     routing {
         route("/api") {
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
                 promptRepoIdProvider = FirestorePromptIdProvider(),
-                promptCache = RedisCache(jedisPool, Prompt.serializer()),
+                promptCache = promptCache,
                 promptCacheIdProvider = RedisPromptIdProvider(),
                 promptLogRepository = FirestoreRepository(serializer = PromptLog.serializer()),
                 servedPromptRepoIdProvider = FirestoreServedPromptRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
-                teamCache = RedisCache(jedisPool, Team.serializer()),
+                teamCache = teamCache,
                 teamCacheIdProvider = RedisTeamIdProvider(),
                 chatProcessor = OpenAIChatProcessor(),
                 chatIdProvider = ChatIdProvider(),

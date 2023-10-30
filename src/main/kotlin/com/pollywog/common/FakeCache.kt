@@ -4,7 +4,7 @@ import kotlinx.serialization.KSerializer
 
 // Only use when running locally for testing
 class FakeCache<T>(
-    private val serializer: KSerializer<T>
+    serializer: KSerializer<T>
 ) : Cache<T> {
     private val firestoreRepo = FirestoreRepository(serializer = serializer)
     override suspend fun get(id: String): T? {

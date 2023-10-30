@@ -2,9 +2,8 @@ package com.pollywog.prompts
 
 import com.pollywog.common.Cache
 import com.pollywog.common.Repository
-import com.pollywog.teams.EncryptionProvider
-import com.pollywog.teams.Team
-import com.pollywog.teams.TeamIdProvider
+import com.pollywog.errors.TooManyRequestsException
+import com.pollywog.teams.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -16,6 +15,10 @@ import java.util.*
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.*
+import kotlinx.datetime.TimeZone
+import kotlin.time.Duration.Companion.seconds
 
 data class ProcessedChat(
     val message: ChatInput, val chatId: String
@@ -30,6 +33,10 @@ class PromptService(
     private val teamRepoIdProvider: TeamIdProvider,
     private val teamCache: Cache<Team>,
     private val teamCacheIdProvider: TeamIdProvider,
+    private val teamSubscriptionRepository: Repository<TeamSubscription>,
+    private val teamSubscriptionRepoIdProvider: TeamIdProvider,
+    private val teamSubscriptionCache: Cache<TeamSubscription>,
+    private val teamSubscriptionCacheIdProvider: TeamIdProvider,
     private val promptLogRepository: Repository<PromptLog>,
     private val servedPromptRepoIdProvider: ServedPromptRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,
@@ -45,8 +52,18 @@ class PromptService(
         val config: PromptConfig,
         val chatId: String,
         val configId: String,
-        val prompt: Prompt
+        val prompt: Prompt,
+        val teamSubscription: TeamSubscription
     )
+
+    companion object {
+        private val RATE_LIMITS = mapOf(
+            SubscriptionType.FREE to 1000.0,
+            SubscriptionType.LIGHT to 10000.0,
+            SubscriptionType.FULL to 100000.0,
+            SubscriptionType.CORPORATE to 1000000.0
+        )
+    }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -106,13 +123,27 @@ class PromptService(
             } ?: throw Exception("Prompt not found")
         }
 
+        val teamSubscriptionAsync = async {
+            teamSubscriptionCache.get(teamSubscriptionCacheIdProvider.id(teamId)) ?: teamSubscriptionRepository.get(
+                teamSubscriptionRepoIdProvider.id(
+                    teamId
+                )
+            )?.also {
+                launch {
+                    teamSubscriptionCache.set(teamSubscriptionCacheIdProvider.id(teamId), it)
+                    logger.warn("Not using redis for teamSubscription $teamId")
+                }
+            } ?: throw Exception("Team Subscription not found")
+        }
+
         val team = teamAsync.await()
         val prompt = promptAsync.await()
-
+        val teamSubscription = teamSubscriptionAsync.await()
         val fetchDuration = System.currentTimeMillis() - fetchStart
 
         logger.info("Data fetching took $fetchDuration ms")
-
+        val updateSubscription = processRateLimitWindow(teamSubscription)
+            ?: throw TooManyRequestsException("Too many requests. Consider upgrading your subscription")
         val (currentVersion, currentVersionId) = getCurrentVersion(prompt)
         val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")
         val secret = encryptionProvider.decrypt(encryptedSecret)
@@ -121,8 +152,44 @@ class PromptService(
         val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId, UUID.randomUUID().toString())
 
         PreparedChat(
-            filledPrompt, currentVersionId, secret, currentVersion.config, newChatId, currentVersion.configId, prompt
+            filledPrompt = filledPrompt,
+            versionId = currentVersionId,
+            secret = secret,
+            config = currentVersion.config,
+            chatId = newChatId,
+            configId = currentVersion.configId,
+            prompt = prompt,
+            teamSubscription = updateSubscription
         )
+    }
+
+    private fun processRateLimitWindow(teamSubscription: TeamSubscription): TeamSubscription? {
+        val rateLimit = RATE_LIMITS[teamSubscription.subscriptionType] ?: return null
+        val currentTime = Clock.System.now()
+
+        val localTime = currentTime.toLocalDateTime(TimeZone.currentSystemDefault())
+        val totalSecondsSinceMidnight = localTime.second + localTime.minute * 60 + localTime.hour * 3600
+        val roundedSeconds = (totalSecondsSinceMidnight / 300) * 300
+        val startTime = Clock.System.now().minus(totalSecondsSinceMidnight.seconds).plus(roundedSeconds.seconds)
+
+        val validWindows = teamSubscription.tokenWindows.filter {
+            it.startTime.plus(1.days) >= currentTime
+        }.toMutableList()
+
+        val recentUsage = validWindows.sumOf { it.requestCount }
+        if (recentUsage >= rateLimit) return null
+
+        val currentWindowIndex =
+            validWindows.indexOfFirst { it.startTime.toRoundedString() == startTime.toRoundedString() }
+
+        if (currentWindowIndex != -1) {
+            val currentWindow = validWindows[currentWindowIndex]
+            validWindows[currentWindowIndex] = currentWindow.copy(requestCount = currentWindow.requestCount + 1)
+        } else {
+            validWindows.add(TokenWindow(startTime, 1.0))
+        }
+
+        return teamSubscription.copy(tokenWindows = validWindows)
     }
 
     private suspend fun cleanUp(
@@ -133,22 +200,34 @@ class PromptService(
         preparedChat: PreparedChat,
         userId: String?,
         duration: Double,
-        ipAddress: String
-    ) {
-        coroutineScope {
-            launch {
-                updatePromptData(preparedChat.prompt, teamId, promptId)
-                createLog(
-                    userId = userId,
-                    messages = messages,
-                    teamId = teamId,
-                    response = response,
-                    promptId = promptId,
-                    preparedChat = preparedChat,
-                    duration = duration,
-                    ipAddress = ipAddress
-                )
-            }
+        ipAddress: String,
+    ) = coroutineScope {
+        launch {
+            updatePromptData(preparedChat.prompt, teamId, promptId)
+        }
+        launch {
+            createLog(
+                userId = userId,
+                messages = messages,
+                teamId = teamId,
+                response = response,
+                promptId = promptId,
+                preparedChat = preparedChat,
+                duration = duration,
+                ipAddress = ipAddress
+            )
+        }
+        launch {
+            updateTeamSubscription(preparedChat.teamSubscription, teamId)
+        }
+    }
+
+    private suspend fun updateTeamSubscription(teamSubscription: TeamSubscription, teamId: String) = coroutineScope {
+        launch {
+            teamSubscriptionRepository.set(teamSubscriptionRepoIdProvider.id(teamId), teamSubscription)
+        }
+        launch {
+            teamSubscriptionCache.set(teamSubscriptionCacheIdProvider.id(teamId), teamSubscription)
         }
     }
 
@@ -268,4 +347,10 @@ class PromptService(
         }
         return result
     }
+}
+
+fun Instant.toRoundedString(): String {
+    val localDateTime = this.toLocalDateTime(TimeZone.currentSystemDefault())
+    val roundedMinutes = localDateTime.minute / 5 * 5
+    return "${localDateTime.date} ${localDateTime.hour}:$roundedMinutes"
 }

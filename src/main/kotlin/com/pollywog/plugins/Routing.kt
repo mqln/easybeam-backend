@@ -40,6 +40,7 @@ fun Application.configureRouting() {
     val isLocal = config.propertyOrNull("ktor.environment")?.getString()?.equals("local") ?: false
     val promptCache = if (isLocal) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
     val teamCache = if (isLocal) FakeCache(serializer = Team.serializer()) else RedisCache(jedisPool, Team.serializer())
+    val teamSubscriptionCache = if (isLocal) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(jedisPool, TeamSubscription.serializer())
 
     routing {
         route("/api") {
@@ -58,7 +59,11 @@ fun Application.configureRouting() {
                 chatProcessor = OpenAIChatProcessor(),
                 chatIdProvider = ChatIdProvider(),
                 abTestRepository = FirestoreRepository(serializer = PromptABTest.serializer()),
-                abTestIdProvider = FirestorePromptABTestIdProvider()
+                abTestIdProvider = FirestorePromptABTestIdProvider(),
+                teamSubscriptionRepository = FirestoreRepository(serializer = TeamSubscription.serializer()),
+                teamSubscriptionRepoIdProvider = FirestoreTeamSubscriptionIdProvider(),
+                teamSubscriptionCache = teamSubscriptionCache,
+                teamSubscriptionCacheIdProvider = RedisTeamSubscriptionIdProvider()
             )
             promptRouting(promptService = promptService)
 

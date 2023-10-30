@@ -4,14 +4,13 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.slf4j.LoggerFactory
-
 
 @Serializable
 data class GetChatRequest(
@@ -43,7 +42,8 @@ fun Route.promptRouting(promptService: PromptService) {
                         parameters = requestBody.parameters,
                         chatId = requestBody.chatId,
                         messages = requestBody.messages,
-                        userId = requestBody.userId
+                        userId = requestBody.userId,
+                        ipAddress = call.request.origin.remoteAddress
                     )
                     call.response.headers.append(HttpHeaders.ContentType, ContentType.Text.EventStream.toString())
 
@@ -66,7 +66,8 @@ fun Route.promptRouting(promptService: PromptService) {
                         requestBody.parameters,
                         requestBody.chatId,
                         requestBody.messages,
-                        requestBody.userId
+                        requestBody.userId,
+                        ipAddress = call.request.origin.remoteAddress
                     )
                     call.respond(
                         GetChatResponse(

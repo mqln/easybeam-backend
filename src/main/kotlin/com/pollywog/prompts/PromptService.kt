@@ -2,7 +2,6 @@ package com.pollywog.prompts
 
 import com.pollywog.common.Cache
 import com.pollywog.common.Repository
-import com.pollywog.promptTests.promptTestsRouting
 import com.pollywog.teams.EncryptionProvider
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamIdProvider
@@ -89,13 +88,17 @@ class PromptService(
             teamCache.get(teamCacheIdProvider.id(teamId)) ?: teamRepository.get(teamRepoIdProvider.id(teamId))?.also {
                 launch {
                     teamCache.set(teamCacheIdProvider.id(teamId), it)
-                    logger.warn("Not using redis for team ${teamId}")
+                    logger.warn("Not using redis for team $teamId")
                 }
             } ?: throw Exception("Team not found")
         }
 
         val promptAsync = async {
-            promptCache.get(promptCacheIdProvider.id(teamId, promptId)) ?: promptRepository.get(promptRepoIdProvider.id(teamId, promptId))?.also {
+            promptCache.get(promptCacheIdProvider.id(teamId, promptId)) ?: promptRepository.get(
+                promptRepoIdProvider.id(
+                    teamId, promptId
+                )
+            )?.also {
                 launch {
                     promptCache.set(promptCacheIdProvider.id(teamId, promptId), it)
                     logger.warn("Not using redis for prompt ${teamId}/prompts/${promptId}")
@@ -117,7 +120,9 @@ class PromptService(
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
         val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId, UUID.randomUUID().toString())
 
-        PreparedChat(filledPrompt, currentVersionId, secret, currentVersion.config, newChatId, currentVersion.configId, prompt)
+        PreparedChat(
+            filledPrompt, currentVersionId, secret, currentVersion.config, newChatId, currentVersion.configId, prompt
+        )
     }
 
     private suspend fun cleanUp(
@@ -128,6 +133,7 @@ class PromptService(
         preparedChat: PreparedChat,
         userId: String?,
         duration: Double,
+        ipAddress: String
     ) {
         coroutineScope {
             launch {
@@ -139,7 +145,8 @@ class PromptService(
                     response = response,
                     promptId = promptId,
                     preparedChat = preparedChat,
-                    duration = duration
+                    duration = duration,
+                    ipAddress = ipAddress
                 )
             }
         }
@@ -152,7 +159,8 @@ class PromptService(
         response: ChatInput,
         preparedChat: PreparedChat,
         userId: String?,
-        duration: Double
+        duration: Double,
+        ipAddress: String
     ) {
         val promptLog = PromptLog(
             filledPrompt = preparedChat.filledPrompt,
@@ -165,7 +173,8 @@ class PromptService(
             userId = userId,
             config = preparedChat.config,
             configId = preparedChat.configId,
-            duration = duration
+            duration = duration,
+            ipAddress = ipAddress
         )
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, null)
 
@@ -178,7 +187,8 @@ class PromptService(
         parameters: Map<String, Any>,
         chatId: String?,
         messages: List<ChatInput>,
-        userId: String?
+        userId: String?,
+        ipAddress: String
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
         val response: ChatInput
@@ -198,6 +208,7 @@ class PromptService(
             promptId = promptId,
             preparedChat = preparedChat,
             duration = duration.toDouble(DurationUnit.MILLISECONDS),
+            ipAddress = ipAddress,
         )
         return ProcessedChat(
             message = response, chatId = preparedChat.chatId
@@ -210,7 +221,8 @@ class PromptService(
         parameters: Map<String, Any>,
         chatId: String?,
         messages: List<ChatInput>,
-        userId: String?
+        userId: String?,
+        ipAddress: String,
     ): Flow<ProcessedChat> {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
 
@@ -229,6 +241,7 @@ class PromptService(
                 promptId = promptId,
                 preparedChat = preparedChat,
                 duration = duration,
+                ipAddress = ipAddress
             )
         }
 
@@ -239,6 +252,7 @@ class PromptService(
             )
         }
     }
+
     private inline fun <T> measureTimeWithResult(block: () -> T): Pair<T, Double> {
         var result: T
         val duration = measureTime {

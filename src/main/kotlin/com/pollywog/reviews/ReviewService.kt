@@ -28,8 +28,9 @@ class ReviewService(
 
         val version = versionRepo.get(versionIdProvider.id(teamId, decodedChatId.promptId, decodedChatId.versionId))
             ?: throw Exception("Reviewing dead version")
-        val reviewCount = (version.reviewCount ?: 0)
-        val scoreTotal = (version.averageReviewScore ?: 0).toDouble() * reviewCount
+        val reviewCount = (version.reviewCount ?: 0).toDouble()
+        val averageReviewScore = (version.averageReviewScore ?: 0).toDouble()
+        val scoreTotal = averageReviewScore * reviewCount
         val newReviewCount = reviewCount + 1
         val newAverageReviewScore = (scoreTotal + reviewScore) / newReviewCount
         val updatedVersion = version.copy(averageReviewScore = newAverageReviewScore, reviewCount = newReviewCount)

@@ -35,13 +35,14 @@ class FirestoreRepository<T>(
         }
     }
 
-    private fun fromFirestoreMap(map: Map<String, Any>): Map<String, Any> {
-        return map.mapValues { entry ->
-            when (val value = entry.value) {
-                is Timestamp -> value.toDate().toInstant().toString()  // Convert to String here
-                is Map<*, *> -> fromFirestoreMap(value as Map<String, Any>)
-                else -> value
+    private fun fromFirestoreMap(data: Any?): Any? {
+        return when (data) {
+            is Timestamp -> data.toDate().toInstant().toString()
+            is Map<*, *> -> (data as Map<String, Any>).mapValues { entry ->
+                fromFirestoreMap(entry.value)
             }
+            is List<*> -> data.map { fromFirestoreMap(it) }
+            else -> data
         }
     }
 
@@ -49,7 +50,7 @@ class FirestoreRepository<T>(
         val document = firestore.document(id).get().get()
         return if (document.exists()) {
             val data = document.data!!
-            val transformedData = fromFirestoreMap(data)
+            val transformedData = fromFirestoreMap(data) as Map<String, Any>
             val jsonString = gson.toJson(transformedData)
             sharedJson.decodeFromString(serializer, jsonString)
         } else {
@@ -72,7 +73,7 @@ class FirestoreRepository<T>(
     override suspend fun getList(path: String): List<T> {
         val collection = firestore.collection(path).get().get()
         return collection.documents.map {
-            val transformedData = fromFirestoreMap(it.data)
+            val transformedData = fromFirestoreMap(it.data) as Map<String, Any>
             val jsonString = gson.toJson(transformedData)
             sharedJson.decodeFromString(serializer, jsonString)
         }

@@ -164,7 +164,7 @@ class PromptService(
     }
 
     private fun processRateLimitWindow(teamSubscription: TeamSubscription): TeamSubscription? {
-        val rateLimit = RATE_LIMITS[teamSubscription.subscriptionType] ?: return null
+        val rateLimit = teamSubscription.calculateRateLimitPerDay()
         val currentTime = Clock.System.now()
 
         val localTime = currentTime.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -225,9 +225,6 @@ class PromptService(
     private suspend fun updateTeamSubscription(teamSubscription: TeamSubscription, teamId: String) = coroutineScope {
         launch {
             teamSubscriptionRepository.set(teamSubscriptionRepoIdProvider.id(teamId), teamSubscription)
-        }
-        launch {
-            teamSubscriptionCache.set(teamSubscriptionCacheIdProvider.id(teamId), teamSubscription)
         }
     }
 
@@ -353,4 +350,24 @@ fun Instant.toRoundedString(): String {
     val localDateTime = this.toLocalDateTime(TimeZone.currentSystemDefault())
     val roundedMinutes = localDateTime.minute / 5 * 5
     return "${localDateTime.date} ${localDateTime.hour}:$roundedMinutes"
+}
+
+fun TeamSubscription.calculateRateLimitPerDay(): Int {
+    val gracePeriod = 5 // days
+    val currentTime = Clock.System.now()
+
+    // Check if there's a current event, and it is within the active period including grace period
+    val activeEvent = currentEvent?.takeIf {
+        it.status == SubscriptionStatus.ACTIVE &&
+                currentTime < it.currentPeriodEnd.plus(gracePeriod.days)
+    }
+
+    // Return the rate limit based on the subscription type if the event is active, otherwise 0
+    return when (activeEvent?.subscriptionType) {
+        SubscriptionType.FREE -> 10
+        SubscriptionType.LIGHT -> 100
+        SubscriptionType.FULL -> 1_000
+        SubscriptionType.CORPORATE -> 10_000
+        null -> 10
+    }
 }

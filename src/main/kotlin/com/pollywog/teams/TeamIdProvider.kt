@@ -17,5 +17,5 @@ class FirestoreTeamSubscriptionIdProvider: TeamIdProvider {
 }
 
 class RedisTeamSubscriptionIdProvider: TeamIdProvider {
-    override fun id(teamId: String): String = "teamsSubscriptions:$teamId"
+    override fun id(teamId: String): String = "teamSubscriptions:$teamId"
 }

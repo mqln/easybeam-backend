@@ -5,7 +5,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TokenWindow(val startTime: Instant, val requestCount: Double)
+data class TokenWindow(val startTime: Instant, val requestCount: Double, val stripeCustomerId: String)
 
 @Serializable
 enum class SubscriptionType {
@@ -44,7 +44,8 @@ data class SubscriptionEvent(
     val createdAt: Instant,
     val interval: SubscriptionInterval,
     val subscriptionId: String,
-    val trialEnd: Instant? = null
+    val trialEnd: Instant? = null,
+    val priceId: String
 )
 
 @Serializable

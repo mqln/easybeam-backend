@@ -11,7 +11,7 @@ data class Team(
     val activeTokens: List<Token> = emptyList(),
     val revokedTokens: List<Token> = emptyList(),
     val name: String,
-    val secrets: Map<String, String> = emptyMap(),
+    val secrets: Map<String, Map<String, String>> = emptyMap(),
 ) {
     fun checkAuthorized(userId: String, requiredRole: TeamRole) {
         val foundRole = members[userId]?.role ?: throw UnauthorizedActionException("You don't have this level of team access")

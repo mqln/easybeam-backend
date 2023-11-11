@@ -11,29 +11,30 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AddSecretRequest(val secret: String, val key: String)
+data class AddSecretRequest(val configId: String, val secrets: Map<String, String>)
+
 @Serializable
 data class AddInviteRequest(val email: String, val role: TeamRole)
 
 fun Route.teamRouting(teamService: TeamService) {
     authenticate("auth-bearer") {
         route("/team/{id}") {
-            route("secret") {
+            route("secrets") {
                 post() {
                     val requestBody = call.receive<AddSecretRequest>()
-                    teamService.addSecret(
-                        secret = requestBody.secret,
-                        key = requestBody.key,
+                    teamService.addSecrets(
+                        configId = requestBody.configId,
+                        secrets = requestBody.secrets,
                         teamId = call.teamId(),
-                        userId = call.userId()
+                        userId = call.userId(),
                     )
-                    call.respond(HttpStatusCode.Created, "Added ${requestBody.key}")
+                    call.respond(HttpStatusCode.Created, "Added ${requestBody.configId}")
                 }
-                delete("{secretId}") {
-                    val secretId = call.parameters["secretId"] ?: return@delete call.respondText(
+                delete("{configId}") {
+                    val configId = call.parameters["configId"] ?: return@delete call.respondText(
                         "Missing secretId", status = HttpStatusCode.BadRequest
                     )
-                    teamService.deleteSecret(key = secretId, teamId = call.teamId(), userId = call.userId())
+                    teamService.deleteSecrets(configId = configId, teamId = call.teamId(), userId = call.userId())
                     call.respond(HttpStatusCode.NoContent)
                 }
             }
@@ -68,4 +69,5 @@ fun Route.teamRouting(teamService: TeamService) {
 }
 
 fun ApplicationCall.teamId(): String = parameters["id"] ?: throw BadRequestException("Missing team id")
-fun ApplicationCall.userId(): String = principal<UserIdPrincipal>()?.name ?: throw UnauthorizedActionException("Invalid Token")
+fun ApplicationCall.userId(): String =
+    principal<UserIdPrincipal>()?.name ?: throw UnauthorizedActionException("Invalid Token")

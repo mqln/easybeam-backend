@@ -18,22 +18,21 @@ class TeamService(
     private val userRepository: Repository<User>,
     private val userIdProvider: UserIdProviding
 ) {
-    suspend fun addSecret(secret: String, key: String, teamId: String, userId: String) {
+    suspend fun addSecrets(configId: String, secrets: Map<String, String>, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
-        team.checkAuthorized(userId, TeamRole.EDITOR)
+        team.checkAuthorized(userId, TeamRole.ADMIN)
 
-        val encrypted = encryptionProvider.encrypt(secret)
-        val secrets = team.secrets.plus(Pair(key, encrypted))
-        val updatedTeam = team.copy(secrets = secrets)
+        val encrypted = secrets.mapValues { encryptionProvider.encrypt(it.value)}
+        val newSecrets: Map<String, Map<String, String>> = team.secrets.plus(Pair(configId, encrypted))
+        val updatedTeam = team.copy(secrets = newSecrets)
         teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
 
-    suspend fun deleteSecret(key: String, teamId: String, userId: String) {
+    suspend fun deleteSecrets(configId: String, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
-        team.checkAuthorized(userId, TeamRole.EDITOR)
-
-        val secrets = team.secrets.filter { it.key != key }
-        val updatedTeam = team.copy(secrets = secrets)
+        team.checkAuthorized(userId, TeamRole.ADMIN)
+        val updatedSecrets = team.secrets.filter { it.key != configId }
+        val updatedTeam = team.copy(secrets = updatedSecrets)
         teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
 

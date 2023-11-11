@@ -56,7 +56,7 @@ fun Application.configureRouting() {
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
                 teamCache = teamCache,
                 teamCacheIdProvider = RedisTeamIdProvider(),
-                chatProcessor = OpenAIChatProcessor(),
+                processorFactory = ChatProcessorFactory,
                 chatIdProvider = ChatIdProvider(),
                 abTestRepository = FirestoreRepository(serializer = PromptABTest.serializer()),
                 abTestIdProvider = FirestorePromptABTestIdProvider(),
@@ -86,7 +86,7 @@ fun Application.configureRouting() {
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
-                chatProcessor = OpenAIChatProcessor()
+                processorFactor = ChatProcessorFactory
             )
             promptTestsRouting(promptTestService = promptTestService)
 

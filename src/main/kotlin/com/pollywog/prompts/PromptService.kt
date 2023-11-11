@@ -40,30 +40,22 @@ class PromptService(
     private val promptLogRepository: Repository<PromptLog>,
     private val servedPromptRepoIdProvider: ServedPromptRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,
-    private val chatProcessor: ChatProcessor,
     private val chatIdProvider: ChatIdProviding,
     private val abTestRepository: Repository<PromptABTest>,
     private val abTestIdProvider: PromptABTestIdProviding,
+    private val processorFactory: ChatProcessorFactoryType
 ) {
     private data class PreparedChat(
         val filledPrompt: String,
         val versionId: String,
-        val secret: String,
+        val secrets: Map<String, String>,
         val config: PromptConfig,
         val chatId: String,
         val configId: String,
         val prompt: Prompt,
-        val teamSubscription: TeamSubscription
+        val teamSubscription: TeamSubscription,
+        val chatProcessor: ChatProcessor
     )
-
-    companion object {
-        private val RATE_LIMITS = mapOf(
-            SubscriptionType.FREE to 1000.0,
-            SubscriptionType.LIGHT to 10000.0,
-            SubscriptionType.FULL to 100000.0,
-            SubscriptionType.CORPORATE to 1000000.0
-        )
-    }
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -145,21 +137,23 @@ class PromptService(
         val updateSubscription = processRateLimitWindow(teamSubscription)
             ?: throw TooManyRequestsException("Too many requests. Consider upgrading your subscription")
         val (currentVersion, currentVersionId) = getCurrentVersion(prompt)
-        val encryptedSecret = team.secrets[currentVersion.configId] ?: throw Exception("No key for chat provider")
-        val secret = encryptionProvider.decrypt(encryptedSecret)
+        val encryptedSecrets = team.secrets[currentVersion.configId] ?: throw Exception("No secrets for ${currentVersion.configId}")
+        val decryptedSecrets = encryptedSecrets.mapValues { encryptionProvider.decrypt(it.value) }
 
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
         val newChatId = chatId ?: chatIdProvider.createId(promptId, currentVersionId, UUID.randomUUID().toString())
+        val processor = processorFactory.get(currentVersion.configId)
 
         PreparedChat(
             filledPrompt = filledPrompt,
             versionId = currentVersionId,
-            secret = secret,
+            secrets = decryptedSecrets,
             config = currentVersion.config,
             chatId = newChatId,
             configId = currentVersion.configId,
             prompt = prompt,
-            teamSubscription = updateSubscription
+            teamSubscription = updateSubscription,
+            chatProcessor = processor
         )
     }
 
@@ -270,8 +264,8 @@ class PromptService(
         val response: ChatInput
         val processStart = System.currentTimeMillis()
         val duration = measureTime {
-            response = chatProcessor.processChat(
-                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
+            response = preparedChat.chatProcessor.processChat(
+                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
             )
         }
         val processDuration = System.currentTimeMillis() - processStart
@@ -303,8 +297,8 @@ class PromptService(
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
 
         val (responses, duration) = measureTimeWithResult {
-            chatProcessor.processChatFlow(
-                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secret
+            preparedChat.chatProcessor.processChatFlow(
+                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
             ).toList()
         }
 

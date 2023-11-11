@@ -4,6 +4,7 @@ import com.aallam.openai.api.chat.*
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.pollywog.errors.UnauthorizedActionException
 import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -16,11 +17,11 @@ private fun ChatInputRole.openAIRole(): ChatRole {
 
 interface ChatProcessor {
     suspend fun processChat(
-        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secret: String
+        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
     ): ChatInput
 
     suspend fun processChatFlow(
-        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secret: String
+        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
     ): Flow<ChatInput>
 }
 
@@ -48,18 +49,20 @@ class OpenAIChatProcessor : ChatProcessor {
     }
 
     override suspend fun processChat(
-        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secret: String
+        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
     ): ChatInput {
-        val openAI = OpenAI(token = secret, timeout = Timeout(socket = 60.seconds))
+        val token = secrets["token"] ?: throw UnauthorizedActionException("Missing secret 'token'")
+        val openAI = OpenAI(token = token, timeout = Timeout(socket = 60.seconds))
         val request = request(filledPrompt, messages, config)
         val result = openAI.chatCompletion(request)
         return ChatInput(content = (result.choices[0].message.content ?: ""), role = ChatInputRole.AI)
     }
 
     override suspend fun processChatFlow(
-        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secret: String
+        filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
     ): Flow<ChatInput> {
-        val openAI = OpenAI(token = secret, timeout = Timeout(socket = 60.seconds))
+        val token = secrets["token"] ?: throw UnauthorizedActionException("Missing secret 'token'")
+        val openAI = OpenAI(token = token, timeout = Timeout(socket = 60.seconds))
         val request = request(filledPrompt, messages, config)
         return openAI.chatCompletions(request).scan("") { accumulatedContent, chatCompletion ->
             accumulatedContent + (chatCompletion.choices[0].delta.content ?: "")

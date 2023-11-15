@@ -1,6 +1,7 @@
 package com.pollywog.prompts
 
 import com.google.auth.oauth2.GoogleCredentials
+import com.pollywog.errors.UnauthorizedActionException
 import kotlinx.coroutines.flow.Flow
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -19,6 +20,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -43,8 +46,9 @@ class GoogleChatProcessor : ChatProcessor {
     override suspend fun processChat(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
     ): ChatInput {
-        val keyJson = secrets["jsonKey"]!!
-        val projectId = secrets["projectid"]!!
+        val keyJson = secrets["jsonKey"] ?: throw UnauthorizedActionException("Credentials missing for google vertex")
+        val jsonElement = Json.parseToJsonElement(keyJson)
+        val projectId = jsonElement.jsonObject["project_id"]?.jsonPrimitive?.content ?: throw Exception("Project ID not found")
         val model = config.getString("model")
         val googleMessages = messages.map {
             GoogleChatMessage(

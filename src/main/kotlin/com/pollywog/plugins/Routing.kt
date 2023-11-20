@@ -24,7 +24,6 @@ fun Application.configureRouting() {
     val encryptionSecret = aesConfig.property("serverSecret").getString()
     val decryptionSecret = aesConfig.property("clientSecret").getString()
     val jwtConfig = getJWTConfig()
-    val emailApiKey = config.config("email").property("apiKey").getString()
     val redisConfig = config.config("redis")
     val redisHost = redisConfig.property("host").getString()
     val redisPort = redisConfig.property("port").getString().toInt()
@@ -72,11 +71,6 @@ fun Application.configureRouting() {
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 tokenProvider = JWTTokenProvider(jwtConfig),
-                inviteRepository = FirestoreRepository(serializer = Invite.serializer()),
-                inviteIdProvider = FirestoreInviteIdProvider(),
-                emailProvider = EmailProvider(emailApiKey = emailApiKey),
-                userIdProvider = FirestoreUserIdProvider,
-                userRepository = FirestoreRepository(serializer = User.serializer())
             )
             teamRouting(teamService = teamService)
 

@@ -13,8 +13,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AddSecretRequest(val configId: String, val secrets: Map<String, String>)
 
-@Serializable
-data class AddInviteRequest(val email: String, val role: TeamRole)
 
 fun Route.teamRouting(teamService: TeamService) {
     authenticate("auth-bearer") {
@@ -47,20 +45,6 @@ fun Route.teamRouting(teamService: TeamService) {
                         "Missing tokenId", status = HttpStatusCode.BadRequest
                     )
                     teamService.revokeToken(call.userId(), call.teamId(), tokenId)
-                    call.respond(HttpStatusCode.NoContent)
-                }
-            }
-            route("invite") {
-                post() {
-                    val requestBody = call.receive<AddInviteRequest>()
-                    val invite = teamService.invite(call.userId(), call.teamId(), requestBody.email, requestBody.role)
-                    call.respond(HttpStatusCode.Created, invite)
-                }
-                put("accept") {
-                    teamService.acceptInvite(call.userId(), call.teamId())
-                    call.respond(HttpStatusCode.NoContent)
-                }
-                put("reject") {
                     call.respond(HttpStatusCode.NoContent)
                 }
             }

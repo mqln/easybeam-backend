@@ -19,3 +19,11 @@ class FirestoreTeamSubscriptionIdProvider: TeamIdProvider {
 class RedisTeamSubscriptionIdProvider: TeamIdProvider {
     override fun id(teamId: String): String = "teamSubscriptions:$teamId"
 }
+
+class FirestoreTeamSecretsIdProvider: TeamIdProvider {
+    override fun id(teamId: String): String = "teamSecrets/$teamId"
+}
+
+class RedisTeamSecretsIdProvider: TeamIdProvider {
+    override fun id(teamId: String): String = "teamSecrets:$teamId"
+}

@@ -1,11 +1,11 @@
 package com.pollywog.promptTests
 
 import com.pollywog.common.Repository
-import com.pollywog.prompts.ChatProcessor
 import com.pollywog.prompts.ChatProcessorFactoryType
 import com.pollywog.teams.EncryptionProvider
 import com.pollywog.teams.Team
 import com.pollywog.teams.TeamIdProvider
+import com.pollywog.teams.TeamSecrets
 import kotlinx.datetime.Clock
 
 class TeamNotFoundException(teamId: String) : Exception("No team with ID: $teamId found")
@@ -17,6 +17,8 @@ class PromptTestService(
     private val teamRepoIdProvider: TeamIdProvider,
     private val promptTestRunRepo: Repository<PromptTestRun>,
     private val promptTestIdProvider: PromptTestRunRepoIdProvider,
+    private val teamSecretsRepo: Repository<TeamSecrets>,
+    private val teamSecretsIdProvider: TeamIdProvider,
     private val encryptionProvider: EncryptionProvider,
     private val processorFactor: ChatProcessorFactoryType,
 ) {
@@ -27,7 +29,9 @@ class PromptTestService(
         try {
             val team = fetchTeam(teamId)
             validateUserMembership(userId, team)
-            val secrets = fetchAndDecryptSecrets(team, newTestRun.configId)
+            val teamSecrets = teamSecretsRepo.get(teamSecretsIdProvider.id(teamId)) ?: throw Exception("no secrets")
+            val encryptedSecrets = teamSecrets.secrets[newTestRun.configId] ?: throw SecretNotFoundException(newTestRun.configId)
+            val secrets =  encryptedSecrets.mapValues { encryptionProvider.decrypt(it.value) }
 
             val processedTestRun =
                 processChatFlowAndUpdateRepo(newTestRun, secrets, testRunRepoId)
@@ -48,11 +52,6 @@ class PromptTestService(
         if (team.members[userId]?.role == null) {
             throw MemberNotInTeamException()
         }
-    }
-
-    private fun fetchAndDecryptSecrets(team: Team, configId: String): Map<String, String> {
-        val encryptedSecrets = team.secrets[configId] ?: throw SecretNotFoundException(configId)
-        return encryptedSecrets.mapValues { encryptionProvider.decrypt(it.value) }
     }
 
     private suspend fun processChatFlowAndUpdateRepo(

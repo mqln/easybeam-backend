@@ -29,14 +29,14 @@ class PromptService(
     private val promptRepoIdProvider: PromptIdProvider,
     private val promptCache: Cache<Prompt>,
     private val promptCacheIdProvider: PromptIdProvider,
-    private val teamRepository: Repository<Team>,
-    private val teamRepoIdProvider: TeamIdProvider,
-    private val teamCache: Cache<Team>,
-    private val teamCacheIdProvider: TeamIdProvider,
     private val teamSubscriptionRepository: Repository<TeamSubscription>,
     private val teamSubscriptionRepoIdProvider: TeamIdProvider,
     private val teamSubscriptionCache: Cache<TeamSubscription>,
     private val teamSubscriptionCacheIdProvider: TeamIdProvider,
+    private val teamSecretsCache: Cache<TeamSecrets>,
+    private val teamSecretsCacheIdProvider: TeamIdProvider,
+    private val teamSecretsRepository: Repository<TeamSecrets>,
+    private val teamSecretsRepoIdProvider: TeamIdProvider,
     private val promptLogRepository: Repository<PromptLog>,
     private val servedPromptRepoIdProvider: ServedPromptRepoIdProvider,
     private val encryptionProvider: EncryptionProvider,
@@ -93,14 +93,6 @@ class PromptService(
         teamId: String, promptId: String, parameters: Map<String, Any>, chatId: String?
     ): PreparedChat = coroutineScope {
         val fetchStart = System.currentTimeMillis()
-        val teamAsync = async {
-            teamCache.get(teamCacheIdProvider.id(teamId)) ?: teamRepository.get(teamRepoIdProvider.id(teamId))?.also {
-                launch {
-                    teamCache.set(teamCacheIdProvider.id(teamId), it)
-                    logger.warn("Not using redis for team $teamId")
-                }
-            } ?: throw Exception("Team not found")
-        }
 
         val promptAsync = async {
             promptCache.get(promptCacheIdProvider.id(teamId, promptId)) ?: promptRepository.get(
@@ -110,6 +102,19 @@ class PromptService(
             )?.also {
                 launch {
                     promptCache.set(promptCacheIdProvider.id(teamId, promptId), it)
+                    logger.warn("Not using redis for prompt ${teamId}/prompts/${promptId}")
+                }
+            } ?: throw Exception("Prompt not found")
+        }
+
+        val secretsAsync = async {
+            teamSecretsCache.get(teamSecretsCacheIdProvider.id(teamId)) ?: teamSecretsRepository.get(
+                teamSecretsRepoIdProvider.id(
+                    teamId
+                )
+            )?.also {
+                launch {
+                    teamSecretsCache.set(teamSecretsCacheIdProvider.id(teamId), it)
                     logger.warn("Not using redis for prompt ${teamId}/prompts/${promptId}")
                 }
             } ?: throw Exception("Prompt not found")
@@ -128,16 +133,17 @@ class PromptService(
             } ?: throw Exception("Team Subscription not found")
         }
 
-        val team = teamAsync.await()
         val prompt = promptAsync.await()
         val teamSubscription = teamSubscriptionAsync.await()
+        val secrets = secretsAsync.await()
         val fetchDuration = System.currentTimeMillis() - fetchStart
 
         logger.info("Data fetching took $fetchDuration ms")
         val updateSubscription = processRateLimitWindow(teamSubscription)
             ?: throw TooManyRequestsException("Too many requests. Consider upgrading your subscription")
         val (currentVersion, currentVersionId) = getCurrentVersion(prompt)
-        val encryptedSecrets = team.secrets[currentVersion.configId] ?: throw Exception("No secrets for ${currentVersion.configId}")
+        val encryptedSecrets =
+            secrets.secrets[currentVersion.configId] ?: throw Exception("No secrets for ${currentVersion.configId}")
         val decryptedSecrets = encryptedSecrets.mapValues { encryptionProvider.decrypt(it.value) }
 
         val filledPrompt = replacePlaceholders(currentVersion.prompt, parameters)
@@ -352,8 +358,7 @@ fun TeamSubscription.calculateRateLimitPerDay(): Int {
 
     // Check if there's a current event, and it is within the active period including grace period
     val activeEvent = currentEvent?.takeIf {
-        it.status == SubscriptionStatus.ACTIVE &&
-                currentTime < it.currentPeriodEnd.plus(gracePeriod.days)
+        it.status == SubscriptionStatus.ACTIVE && currentTime < it.currentPeriodEnd.plus(gracePeriod.days)
     }
 
     // Return the rate limit based on the subscription type if the event is active, otherwise 0

@@ -38,7 +38,7 @@ fun Application.configureRouting() {
     val jedisPool = JedisPool(poolConfig, redisHost, redisPort)
     val isLocal = config.propertyOrNull("ktor.environment")?.getString()?.equals("local") ?: false
     val promptCache = if (isLocal) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
-    val teamCache = if (isLocal) FakeCache(serializer = Team.serializer()) else RedisCache(jedisPool, Team.serializer())
+    val teamSecretsCache = if (isLocal) FakeCache(serializer = TeamSecrets.serializer()) else RedisCache(jedisPool, TeamSecrets.serializer())
     val teamSubscriptionCache = if (isLocal) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(jedisPool, TeamSubscription.serializer())
 
     routing {
@@ -51,10 +51,10 @@ fun Application.configureRouting() {
                 promptLogRepository = FirestoreRepository(serializer = PromptLog.serializer()),
                 servedPromptRepoIdProvider = FirestoreServedPromptRepoIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
-                teamRepository = FirestoreRepository(serializer = Team.serializer()),
-                teamRepoIdProvider = FirestoreTeamIdProvider(),
-                teamCache = teamCache,
-                teamCacheIdProvider = RedisTeamIdProvider(),
+                teamSecretsRepository = FirestoreRepository(serializer = TeamSecrets.serializer()),
+                teamSecretsRepoIdProvider = FirestoreTeamSecretsIdProvider(),
+                teamSecretsCache = teamSecretsCache,
+                teamSecretsCacheIdProvider = RedisTeamSecretsIdProvider(),
                 processorFactory = ChatProcessorFactory,
                 chatIdProvider = ChatIdProvider(),
                 abTestRepository = FirestoreRepository(serializer = PromptABTest.serializer()),
@@ -71,6 +71,8 @@ fun Application.configureRouting() {
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 tokenProvider = JWTTokenProvider(jwtConfig),
+                teamSecretsRepoIdProvider = FirestoreTeamSecretsIdProvider(),
+                teamSecretsRepository = FirestoreRepository(serializer = TeamSecrets.serializer())
             )
             teamRouting(teamService = teamService)
 
@@ -80,7 +82,9 @@ fun Application.configureRouting() {
                 encryptionProvider = AESEncryptionProvider(encryptionSecret, decryptionSecret),
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),
                 teamRepoIdProvider = FirestoreTeamIdProvider(),
-                processorFactor = ChatProcessorFactory
+                processorFactor = ChatProcessorFactory,
+                teamSecretsIdProvider = FirestoreTeamSecretsIdProvider(),
+                teamSecretsRepo = FirestoreRepository(serializer = TeamSecrets.serializer())
             )
             promptTestsRouting(promptTestService = promptTestService)
 

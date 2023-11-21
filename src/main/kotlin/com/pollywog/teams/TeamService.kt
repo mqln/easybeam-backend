@@ -6,24 +6,31 @@ import java.util.*
 class TeamService(
     private val teamRepository: Repository<Team>,
     private val teamRepoIdProvider: TeamIdProvider,
+    private val teamSecretsRepository: Repository<TeamSecrets>,
+    private val teamSecretsRepoIdProvider: TeamIdProvider,
     private val encryptionProvider: EncryptionProvider,
     private val tokenProvider: TokenProviding,
 ) {
     suspend fun addSecrets(configId: String, secrets: Map<String, String>, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
         team.checkAuthorized(userId, TeamRole.ADMIN)
-
+        val teamSecrets = teamSecretsRepository.get(teamSecretsRepoIdProvider.id(teamId)) ?: TeamSecrets(secrets = emptyMap())
         val encrypted = secrets.mapValues { encryptionProvider.encrypt(it.value)}
-        val newSecrets: Map<String, Map<String, String>> = team.secrets.plus(Pair(configId, encrypted))
-        val updatedTeam = team.copy(secrets = newSecrets)
+        val newSecrets: Map<String, Map<String, String>> = teamSecrets.secrets.plus(Pair(configId, encrypted))
+        val updatedSecretsTeam = teamSecrets.copy(secrets = newSecrets)
+        val updatedTeam = team.copy(secretsUsed = team.secretsUsed.plus(Pair(configId, true)))
+        teamSecretsRepository.set(teamSecretsRepoIdProvider.id(teamId), updatedSecretsTeam)
         teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
 
     suspend fun deleteSecrets(configId: String, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
         team.checkAuthorized(userId, TeamRole.ADMIN)
-        val updatedSecrets = team.secrets.filter { it.key != configId }
-        val updatedTeam = team.copy(secrets = updatedSecrets)
+        val teamSecrets = teamSecretsRepository.get(teamSecretsRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
+        val updatedSecrets = teamSecrets.secrets.filter { it.key != configId }
+        val updatedTeamSecrets = teamSecrets.copy(secrets = updatedSecrets)
+        val updatedTeam = team.copy(secretsUsed = team.secretsUsed.filterKeys { it == configId })
+        teamSecretsRepository.set(teamSecretsRepoIdProvider.id(teamId), updatedTeamSecrets)
         teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
 

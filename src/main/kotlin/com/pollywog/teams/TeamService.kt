@@ -22,6 +22,7 @@ class TeamService(
         teamSecretsRepository.set(teamSecretsRepoIdProvider.id(teamId), updatedSecretsTeam)
         teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }
+    
 
     suspend fun deleteSecrets(configId: String, teamId: String, userId: String) {
         val team = teamRepository.get(teamRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")

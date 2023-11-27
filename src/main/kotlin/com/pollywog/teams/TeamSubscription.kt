@@ -45,8 +45,10 @@ data class SubscriptionEvent(
     val interval: SubscriptionInterval,
     val subscriptionId: String,
     val trialEnd: Instant? = null,
-    val priceId: String
-)
+    val priceId: String,
+    val dailyRequests: Double,
+    val seats: Double,
+    )
 
 @Serializable
 data class TeamSubscription(

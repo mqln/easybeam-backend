@@ -9,30 +9,59 @@ data class TokenWindow(val startTime: Instant, val requestCount: Double)
 
 @Serializable
 enum class SubscriptionType {
-    @SerialName("free") FREE,
-    @SerialName("light") LIGHT,
-    @SerialName("full") FULL,
-    @SerialName("corporate") CORPORATE
+    @SerialName("free")
+    FREE,
+
+    @SerialName("light")
+    LIGHT,
+
+    @SerialName("full")
+    FULL,
+
+    @SerialName("corporate")
+    CORPORATE
 }
 
 @Serializable
 enum class SubscriptionInterval {
-    @SerialName("day") DAY,
-    @SerialName("month") MONTH,
-    @SerialName("week") WEEK,
-    @SerialName("year") YEAR
+    @SerialName("day")
+    DAY,
+
+    @SerialName("month")
+    MONTH,
+
+    @SerialName("week")
+    WEEK,
+
+    @SerialName("year")
+    YEAR
 }
 
 @Serializable
 enum class SubscriptionStatus {
-    @SerialName("active") ACTIVE,
-    @SerialName("canceled") CANCELED,
-    @SerialName("incomplete") INCOMPLETE,
-    @SerialName("incomplete_expired") INCOMPLETE_EXPIRED,
-    @SerialName("past_due") PAST_DUE,
-    @SerialName("paused") PAUSED,
-    @SerialName("trialing") TRIALING,
-    @SerialName("unpaid") UNPAID
+    @SerialName("active")
+    ACTIVE,
+
+    @SerialName("canceled")
+    CANCELED,
+
+    @SerialName("incomplete")
+    INCOMPLETE,
+
+    @SerialName("incomplete_expired")
+    INCOMPLETE_EXPIRED,
+
+    @SerialName("past_due")
+    PAST_DUE,
+
+    @SerialName("paused")
+    PAUSED,
+
+    @SerialName("trialing")
+    TRIALING,
+
+    @SerialName("unpaid")
+    UNPAID
 }
 
 @Serializable
@@ -48,11 +77,9 @@ data class SubscriptionEvent(
     val priceId: String,
     val dailyRequests: Double,
     val seats: Double,
-    )
+)
 
 @Serializable
 data class TeamSubscription(
-    val currentEvent: SubscriptionEvent? = null,
-    val tokenWindows: List<TokenWindow>,
-    val stripeCustomerId: String
+    val currentEvent: SubscriptionEvent? = null, val tokenWindows: List<TokenWindow>, val stripeCustomerId: String
 )

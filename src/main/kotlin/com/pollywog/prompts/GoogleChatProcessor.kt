@@ -94,8 +94,9 @@ class GoogleChatProcessor : ChatProcessor {
     override suspend fun processChatFlow(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
     ): Flow<ChatInput> {
-        val keyJson = secrets["jsonKey"]!!
-        val projectId = secrets["projectid"]!!
+        val keyJson = secrets["jsonKey"] ?: throw UnauthorizedActionException("Credentials missing for google vertex")
+        val jsonElement = Json.parseToJsonElement(keyJson)
+        val projectId = jsonElement.jsonObject["project_id"]?.jsonPrimitive?.content ?: throw Exception("Project ID not found")
         val model = config.getString("model")
 
         val input = messages.map {

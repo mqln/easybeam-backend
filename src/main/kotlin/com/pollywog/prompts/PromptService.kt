@@ -361,12 +361,5 @@ fun TeamSubscription.calculateRateLimitPerDay(): Int {
         it.status == SubscriptionStatus.ACTIVE && currentTime < it.currentPeriodEnd.plus(gracePeriod.days)
     }
 
-    // Return the rate limit based on the subscription type if the event is active, otherwise 0
-    return when (activeEvent?.subscriptionType) {
-        SubscriptionType.FREE -> 10
-        SubscriptionType.LIGHT -> 100
-        SubscriptionType.FULL -> 1_000
-        SubscriptionType.CORPORATE -> 10_000
-        null -> 10
-    }
+    return activeEvent?.dailyRequests?.toInt() ?: 1_000
 }

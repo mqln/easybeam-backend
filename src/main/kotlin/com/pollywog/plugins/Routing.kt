@@ -3,6 +3,7 @@ package com.pollywog.plugins
 import com.pollywog.common.FakeCache
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.common.RedisCache
+import com.pollywog.pipelines.*
 import com.pollywog.promptTests.FirestorePromptTestRunIdProvider
 import com.pollywog.promptTests.PromptTestRun
 import com.pollywog.promptTests.PromptTestService
@@ -16,8 +17,11 @@ import com.pollywog.teams.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import com.pollywog.teams.JWTTokenProvider
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
+
 fun Application.configureRouting() {
     val config = environment.config
     val aesConfig = config.config("aes")
@@ -40,6 +44,7 @@ fun Application.configureRouting() {
     val promptCache = if (isLocal) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
     val teamSecretsCache = if (isLocal) FakeCache(serializer = TeamSecrets.serializer()) else RedisCache(jedisPool, TeamSecrets.serializer())
     val teamSubscriptionCache = if (isLocal) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(jedisPool, TeamSubscription.serializer())
+    val pipelineCache = if (isLocal) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
 
     routing {
         route("/api") {
@@ -65,6 +70,15 @@ fun Application.configureRouting() {
                 teamSubscriptionCacheIdProvider = RedisTeamSubscriptionIdProvider()
             )
             promptRouting(promptService = promptService)
+
+            val pipelineService = PipelineService(
+                promptService = promptService,
+                pipelineCache = pipelineCache,
+                pipelineRepository = FirestoreRepository(serializer = Pipeline.serializer()),
+                pipelineRepoIdProvider = FirestorePipelineIdProvider(),
+                pipelineCacheIdProvider = RedisPipelineIdProvider()
+            )
+            pipelineRouting(pipelineService = pipelineService)
 
             val teamService = TeamService(
                 teamRepository = FirestoreRepository(serializer = Team.serializer()),

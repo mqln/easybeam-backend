@@ -45,7 +45,7 @@ class PromptService(
     private val abTestIdProvider: PromptABTestIdProviding,
     private val processorFactory: ChatProcessorFactoryType
 ) {
-    private data class PreparedChat(
+    data class PreparedChat(
         val filledPrompt: String,
         val versionId: String,
         val secrets: Map<String, String>,
@@ -163,6 +163,71 @@ class PromptService(
         )
     }
 
+    suspend fun preparePipelineChat(
+        teamId: String,
+        promptId: String,
+        prompt: Prompt,
+        versionId: String,
+        version: PromptVersion,
+        parameters: Map<String, Any>,
+        chatId: String?
+    ): PreparedChat = coroutineScope {
+        val fetchStart = System.currentTimeMillis()
+
+        val secretsAsync = async {
+            teamSecretsCache.get(teamSecretsCacheIdProvider.id(teamId)) ?: teamSecretsRepository.get(
+                teamSecretsRepoIdProvider.id(
+                    teamId
+                )
+            )?.also {
+                launch {
+                    teamSecretsCache.set(teamSecretsCacheIdProvider.id(teamId), it)
+                    logger.warn("Not using redis for prompt ${teamId}/prompts/${promptId}")
+                }
+            } ?: throw Exception("Prompt not found")
+        }
+
+        val teamSubscriptionAsync = async {
+            teamSubscriptionCache.get(teamSubscriptionCacheIdProvider.id(teamId)) ?: teamSubscriptionRepository.get(
+                teamSubscriptionRepoIdProvider.id(
+                    teamId
+                )
+            )?.also {
+                launch {
+                    teamSubscriptionCache.set(teamSubscriptionCacheIdProvider.id(teamId), it)
+                    logger.warn("Not using redis for teamSubscription $teamId")
+                }
+            } ?: throw Exception("Team Subscription not found")
+        }
+
+        val teamSubscription = teamSubscriptionAsync.await()
+        val secrets = secretsAsync.await()
+        val fetchDuration = System.currentTimeMillis() - fetchStart
+
+        logger.info("Data fetching took $fetchDuration ms")
+        val updateSubscription = processRateLimitWindow(teamSubscription)
+            ?: throw TooManyRequestsException("Too many requests. Consider upgrading your subscription")
+        val encryptedSecrets =
+            secrets.secrets[version.configId] ?: throw Exception("No secrets for ${version.configId}")
+        val decryptedSecrets = encryptedSecrets.mapValues { encryptionProvider.decrypt(it.value) }
+
+        val filledPrompt = replacePlaceholders(version.prompt, parameters)
+        val newChatId = chatId ?: chatIdProvider.createId(promptId, versionId, UUID.randomUUID().toString())
+        val processor = processorFactory.get(version.configId)
+
+        PreparedChat(
+            filledPrompt = filledPrompt,
+            versionId = versionId,
+            secrets = decryptedSecrets,
+            config = version.config,
+            chatId = newChatId,
+            configId = version.configId,
+            prompt = prompt,
+            teamSubscription = updateSubscription,
+            chatProcessor = processor
+        )
+    }
+
     private fun processRateLimitWindow(teamSubscription: TeamSubscription): TeamSubscription? {
         val rateLimit = teamSubscription.calculateRateLimitPerDay()
         val currentTime = Clock.System.now()
@@ -177,7 +242,7 @@ class PromptService(
         }.toMutableList()
 
         val recentUsage = validWindows.sumOf { it.requestCount }
-        if (recentUsage >= rateLimit) return null
+        if (recentUsage >= rateLimit && rateLimit > 0) return null
 
         val currentWindowIndex =
             validWindows.indexOfFirst { it.startTime.toRoundedString() == startTime.toRoundedString() }
@@ -267,6 +332,43 @@ class PromptService(
         ipAddress: String
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId)
+        val response: ChatInput
+        val processStart = System.currentTimeMillis()
+        val duration = measureTime {
+            response = preparedChat.chatProcessor.processChat(
+                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
+            )
+        }
+        val processDuration = System.currentTimeMillis() - processStart
+        logger.info("Chat processing took $processDuration ms")
+        cleanUp(
+            userId = userId,
+            messages = messages,
+            teamId = teamId,
+            response = response,
+            promptId = promptId,
+            preparedChat = preparedChat,
+            duration = duration.toDouble(DurationUnit.MILLISECONDS),
+            ipAddress = ipAddress,
+        )
+        return ProcessedChat(
+            message = response, chatId = preparedChat.chatId
+        )
+    }
+
+    suspend fun processPipelineChat(
+        teamId: String,
+        promptId: String,
+        prompt: Prompt,
+        versionId: String,
+        version: PromptVersion,
+        parameters: Map<String, Any>,
+        chatId: String?,
+        messages: List<ChatInput>,
+        userId: String?,
+        ipAddress: String
+    ): ProcessedChat {
+        val preparedChat = preparePipelineChat(teamId, promptId, prompt, versionId, version, parameters, chatId)
         val response: ChatInput
         val processStart = System.currentTimeMillis()
         val duration = measureTime {

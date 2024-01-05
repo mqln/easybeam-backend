@@ -24,6 +24,46 @@ data class ProcessedChat(
     val message: ChatInput, val chatId: String
 )
 
+data class PreparedChat(
+    val filledPrompt: String,
+    val versionId: String,
+    val secrets: Map<String, String>,
+    val config: PromptConfig,
+    val chatId: String,
+    val configId: String,
+    val prompt: Prompt,
+    val teamSubscription: TeamSubscription,
+    val chatProcessor: ChatProcessor
+)
+
+data class PreprocessedData(
+    val prompt: Prompt, val promptId: String, val version: PromptVersion, val versionId: String
+)
+
+interface PromptServiceInterface {
+    suspend fun processChat(
+        teamId: String,
+        promptId: String,
+        parameters: Map<String, Any>,
+        chatId: String?,
+        messages: List<ChatInput>,
+        userId: String?,
+        ipAddress: String,
+        preprocessedData: PreprocessedData? = null
+    ): ProcessedChat
+
+    suspend fun processChatFlow(
+        teamId: String,
+        promptId: String,
+        parameters: Map<String, Any>,
+        chatId: String?,
+        messages: List<ChatInput>,
+        userId: String?,
+        ipAddress: String,
+        preprocessedData: PreprocessedData? = null
+    ): Flow<ProcessedChat>
+}
+
 class PromptService(
     private val promptRepository: Repository<Prompt>,
     private val promptRepoIdProvider: PromptIdProvider,
@@ -44,22 +84,7 @@ class PromptService(
     private val abTestRepository: Repository<PromptABTest>,
     private val abTestIdProvider: PromptABTestIdProviding,
     private val processorFactory: ChatProcessorFactoryType
-) {
-    data class PreparedChat(
-        val filledPrompt: String,
-        val versionId: String,
-        val secrets: Map<String, String>,
-        val config: PromptConfig,
-        val chatId: String,
-        val configId: String,
-        val prompt: Prompt,
-        val teamSubscription: TeamSubscription,
-        val chatProcessor: ChatProcessor
-    )
-
-    data class PreprocessedData(
-        val prompt: Prompt, val promptId: String, val version: PromptVersion, val versionId: String
-    )
+) : PromptServiceInterface {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -264,7 +289,7 @@ class PromptService(
         promptLogRepository.set(servedPromptRepoId, promptLog)
     }
 
-    suspend fun processChat(
+    override suspend fun processChat(
         teamId: String,
         promptId: String,
         parameters: Map<String, Any>,
@@ -272,7 +297,7 @@ class PromptService(
         messages: List<ChatInput>,
         userId: String?,
         ipAddress: String,
-        preprocessedData: PreprocessedData? = null
+        preprocessedData: PreprocessedData?
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId, preprocessedData)
         val response: ChatInput
@@ -299,7 +324,7 @@ class PromptService(
         )
     }
 
-    suspend fun processChatFlow(
+    override suspend fun processChatFlow(
         teamId: String,
         promptId: String,
         parameters: Map<String, Any>,
@@ -307,7 +332,7 @@ class PromptService(
         messages: List<ChatInput>,
         userId: String?,
         ipAddress: String,
-        preprocessedData: PreprocessedData? = null
+        preprocessedData: PreprocessedData?
     ): Flow<ProcessedChat> {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId, preprocessedData)
 

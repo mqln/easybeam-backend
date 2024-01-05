@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import org.slf4j.LoggerFactory
 
 class PipelineService(
-    private val promptService: PromptService,
+    private val promptService: PromptServiceInterface,
     private val pipelineRepository: Repository<Pipeline>,
     private val pipelineRepoIdProvider: PipelineIdProvider,
     private val pipelineCache: Cache<Pipeline>,
@@ -20,7 +20,7 @@ class PipelineService(
     data class LastStepData(
         val lastStep: PipelineAction,
         val parameters: Map<String, String>,
-        val preprocessedData: PromptService.PreprocessedData
+        val preprocessedData: PreprocessedData
     )
 
     suspend fun processChat(
@@ -109,7 +109,7 @@ class PipelineService(
                             is PipelineAction -> {
                                 val lastParameters: Map<String, String> =
                                     prepareActionParameters(lastStep, output, userData)
-                                val preprocessedData = PromptService.PreprocessedData(
+                                val preprocessedData = PreprocessedData(
                                     prompt = lastStep.prompt,
                                     promptId = lastStep.promptId,
                                     version = lastStep.version,

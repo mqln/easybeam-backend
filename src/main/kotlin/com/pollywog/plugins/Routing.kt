@@ -28,23 +28,12 @@ fun Application.configureRouting() {
     val encryptionSecret = aesConfig.property("serverSecret").getString()
     val decryptionSecret = aesConfig.property("clientSecret").getString()
     val jwtConfig = getJWTConfig()
-    val redisConfig = config.config("redis")
-    val redisHost = redisConfig.property("host").getString()
-    val redisPort = redisConfig.property("port").getString().toInt()
-    val poolConfig = JedisPoolConfig().apply {
-        maxTotal = 50
-        maxIdle = 10
-        minIdle = 5
-        testOnBorrow = true
-        testOnReturn = true
-        testWhileIdle = true
-    }
-    val jedisPool = JedisPool(poolConfig, redisHost, redisPort)
-    val isLocal = config.propertyOrNull("ktor.environment")?.getString()?.equals("local") ?: false
-    val promptCache = if (isLocal) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
-    val teamSecretsCache = if (isLocal) FakeCache(serializer = TeamSecrets.serializer()) else RedisCache(jedisPool, TeamSecrets.serializer())
-    val teamSubscriptionCache = if (isLocal) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(jedisPool, TeamSubscription.serializer())
-    val pipelineCache = if (isLocal) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
+
+    val jedisPool = jedisPool()
+    val promptCache = if (isLocal()) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
+    val teamSecretsCache = if (isLocal()) FakeCache(serializer = TeamSecrets.serializer()) else RedisCache(jedisPool, TeamSecrets.serializer())
+    val teamSubscriptionCache = if (isLocal()) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(jedisPool, TeamSubscription.serializer())
+    val pipelineCache = if (isLocal()) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
 
     routing {
         route("/api") {

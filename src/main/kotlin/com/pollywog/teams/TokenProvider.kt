@@ -5,17 +5,26 @@ import org.slf4j.LoggerFactory
 import java.util.Date
 
 interface TokenProviding {
-    fun createToken(userId: String, teamId: String, tokenId: String): String
+    fun createServerToken(teamId: String, tokenId: String, teamJwtToken: String): String
+    fun createTeamToken(userId: String, teamSecret: String): String
 }
 class JWTTokenProvider(private val jwtConfig: JWTConfig): TokenProviding {
-    override fun createToken(userId: String, teamId: String, tokenId: String): String {
+    override fun createServerToken(teamId: String, tokenId: String, teamJwtToken: String): String {
+        return JWT.create()
+            .withAudience(jwtConfig.audience)
+            .withIssuer(jwtConfig.issuer)
+            .withClaim("teamId", teamId)
+            .withClaim("tokenId", tokenId)
+            .withClaim("teamJwtToken", teamJwtToken)
+            .withClaim("issuedAt", Date().toString())
+            .sign(Algorithm.HMAC256(jwtConfig.secret))
+    }
+    override fun createTeamToken(userId: String, teamSecret: String): String {
         return JWT.create()
             .withAudience(jwtConfig.audience)
             .withIssuer(jwtConfig.issuer)
             .withClaim("userId", userId)
-            .withClaim("teamId", teamId)
-            .withClaim("tokenId", tokenId)
             .withClaim("issuedAt", Date().toString())
-            .sign(Algorithm.HMAC256(jwtConfig.secret))
+            .sign(Algorithm.HMAC256(teamSecret))
     }
 }

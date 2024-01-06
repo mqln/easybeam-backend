@@ -8,8 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Team(
     val members: Map<String, Member>,
-    val activeTokens: List<Token> = emptyList(),
-    val revokedTokens: List<Token> = emptyList(),
+    val tokenMetadata: Map<String, TokenMetadata> = emptyMap(),
     val name: String,
     val secretsUsed: Map<String, Boolean> = emptyMap(),
 ) {

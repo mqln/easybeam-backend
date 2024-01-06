@@ -38,13 +38,13 @@ fun Route.teamRouting(teamService: TeamService) {
             }
             route("token") {
                 post() {
-                    call.respond(HttpStatusCode.Created, teamService.generateAndSaveToken(call.userId(), call.teamId()))
+                    call.respond(HttpStatusCode.Created, teamService.generateJWTMethod(call.userId(), call.teamId()))
                 }
                 delete("{tokenId}") {
                     val tokenId = call.parameters["tokenId"] ?: return@delete call.respondText(
                         "Missing tokenId", status = HttpStatusCode.BadRequest
                     )
-                    teamService.revokeToken(call.userId(), call.teamId(), tokenId)
+                    teamService.removeJWTMethod(call.userId(), call.teamId(), tokenId)
                     call.respond(HttpStatusCode.NoContent)
                 }
             }

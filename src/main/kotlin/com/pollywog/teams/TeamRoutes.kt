@@ -13,6 +13,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AddSecretRequest(val configId: String, val secrets: Map<String, String>)
 
+@Serializable
+data class AddTokenResponse(val jwtToken: String)
 
 fun Route.teamRouting(teamService: TeamService) {
     authenticate("auth-bearer") {
@@ -38,7 +40,8 @@ fun Route.teamRouting(teamService: TeamService) {
             }
             route("token") {
                 post() {
-                    call.respond(HttpStatusCode.Created, teamService.generateJWTMethod(call.userId(), call.teamId()))
+                    val jwtToken = teamService.generateJWTMethod(call.userId(), call.teamId())
+                    call.respond(HttpStatusCode.Created, AddTokenResponse(jwtToken))
                 }
                 delete("{tokenId}") {
                     val tokenId = call.parameters["tokenId"] ?: return@delete call.respondText(

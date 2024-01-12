@@ -2,5 +2,5 @@ steps:
   # Deploy directly from source to Google Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args: ['beta', 'run', 'deploy', 'pollywog', '--source', '.', '--region', 'us-central1', '--platform', 'managed']
-# test
+# test2
 timeout: '1200s' # Optional: Increase the timeout if needed, especially for larger applications

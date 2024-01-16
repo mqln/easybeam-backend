@@ -1,5 +1,6 @@
 package com.pollywog
 
+import com.pollywog.common.FirebaseAdmin
 import com.pollywog.errors.configureStatusPages
 import com.pollywog.plugins.*
 import io.ktor.http.*
@@ -10,6 +11,7 @@ import io.ktor.server.plugins.statuspages.*
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
 fun Application.module() {
+    FirebaseAdmin.initialize(environment)
     install(StatusPages) {
         configureStatusPages()
     }

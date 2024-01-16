@@ -10,19 +10,21 @@ import com.google.common.reflect.TypeToken
 import com.google.firebase.auth.FirebaseAuth
 import com.google.gson.*
 import com.pollywog.plugins.sharedJson
+import io.ktor.server.application.*
 import java.util.Date
 import kotlinx.datetime.Instant
 import kotlinx.serialization.*
 import kotlinx.serialization.json.Json
 
 object FirebaseAdmin {
-    val firestore: Firestore
-    val auth: FirebaseAuth
+    lateinit var firestore: Firestore
+    lateinit var auth: FirebaseAuth
 
-    init {
+    fun initialize(environment: ApplicationEnvironment) {
+        val projectId = environment.config.config("firebase").property("projectId").getString()
         val credentials: GoogleCredentials = GoogleCredentials.getApplicationDefault()
         val options: FirebaseOptions =
-            FirebaseOptions.builder().setCredentials(credentials).setProjectId("pollywog-ai-dev").build()
+            FirebaseOptions.builder().setCredentials(credentials).setProjectId(projectId).build()
 
         val app = FirebaseApp.initializeApp(options)
         firestore = FirestoreOptions.getDefaultInstance().service

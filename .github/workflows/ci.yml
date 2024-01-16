@@ -24,23 +24,3 @@ jobs:
 
     - name: Build with Gradle
       run: ./gradlew build
-
-    - name: Run Tests
-      run: ./gradlew test
-
-    - name: Upload Test Report
-      id: artifact-upload-step
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-report
-        path: |
-          build/reports/tests/test/index.html
-
-    - name: Post comment with link to Test Report
-      if: failure()
-      uses: peter-evans/create-or-update-comment@v1
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        body: 'Tests results: ${{ steps.artifact-upload-step.outputs.artifact-url }}.'
-        token: ${{ secrets.GITHUB_TOKEN }}
-

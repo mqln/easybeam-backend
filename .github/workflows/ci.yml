@@ -41,7 +41,6 @@ jobs:
       uses: peter-evans/create-or-update-comment@v1
       with:
         issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          :x: Tests results: ${{ steps.artifact-upload-step.outputs.artifact-url }}.
+        body: 'Tests results: ${{ steps.artifact-upload-step.outputs.artifact-url }}.'
         token: ${{ secrets.GITHUB_TOKEN }}
 

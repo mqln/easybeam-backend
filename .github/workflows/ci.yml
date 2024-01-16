@@ -29,8 +29,8 @@ jobs:
       run: ./gradlew test
 
     - name: Upload Test Report
-      if: failure()
-      uses: actions/upload-artifact@v2
+      id: artifact-upload-step
+      uses: actions/upload-artifact@v4
       with:
         name: test-report
         path: |
@@ -42,7 +42,6 @@ jobs:
       with:
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          :x: Tests failed. You can view the test report [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
-          Please check the 'Artifacts' section in the top right corner to download the detailed test report.
+          :x: Tests results: ${{ steps.artifact-upload-step.outputs.artifact-url }}.
         token: ${{ secrets.GITHUB_TOKEN }}
 

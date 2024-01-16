@@ -24,3 +24,23 @@ jobs:
 
     - name: Build with Gradle
       run: ./gradlew build
+
+    - name: Upload Test Report
+      id: artifact-upload-step
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-report
+        path: |
+          build/reports/tests/test/index.html
+
+    - name: Post comment with link to Test Report
+      if: failure()
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          :x: Tests failed. You can view the test report [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+          Please check the 'Artifacts' section in the top right corner to download the detailed test report.
+        token: ${{ secrets.GITHUB_TOKEN }}
+

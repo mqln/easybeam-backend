@@ -124,7 +124,6 @@ class TeamServiceTest {
         coVerify { teamSecretsRepository.set(any(), match { it.jwtSecrets.isNotEmpty() }) }
     }
 
-
     @Test
     fun `removeJWTMethod should remove token from secrets and metadata`() = runBlocking {
         // Arrange
@@ -140,8 +139,6 @@ class TeamServiceTest {
         coVerify { teamRepository.set(any(), match { !it.tokenMetadata.containsKey("tokenId") }) }
         coVerify { teamSecretsRepository.set(any(), match { !it.jwtSecrets.containsKey("tokenId") }) }
     }
-
-    // Similar structure for other tests...
 
     private fun mockTeamAndSecretsRepositoriesGet(team: Team) {
         coEvery { teamRepository.get(any()) } returns team

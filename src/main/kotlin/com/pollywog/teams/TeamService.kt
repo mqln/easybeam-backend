@@ -35,7 +35,7 @@ class TeamService(
             teamSecretsRepository.get(teamSecretsRepoIdProvider.id(teamId)) ?: throw Exception("No team $teamId")
         val updatedSecrets = teamSecrets.secrets.filter { it.key != configId }
         val updatedTeamSecrets = teamSecrets.copy(secrets = updatedSecrets)
-        val updatedTeam = team.copy(secretsUsed = team.secretsUsed.filterKeys { it == configId })
+        val updatedTeam = team.copy(secretsUsed = team.secretsUsed.filterKeys { it != configId })
         teamSecretsRepository.set(teamSecretsRepoIdProvider.id(teamId), updatedTeamSecrets)
         teamRepository.set(teamRepoIdProvider.id(teamId), updatedTeam)
     }

@@ -3,9 +3,8 @@ package com.pollywog.teams
 import com.pollywog.common.*
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlinx.datetime.Clock
+import kotlin.test.*
 
 class TeamServiceTest {
     private lateinit var teamService: TeamService
@@ -115,13 +114,18 @@ class TeamServiceTest {
         mockTeamAndSecretsRepositoriesGet(team)
         coEvery { tokenProvider.createTeamToken(any(), any()) } returns "teamJwt"
         coEvery { tokenProvider.createServerToken(any(), any(), "teamJwt") } returns "serverJwt"
+        val teamSlot = slot<Team>()
+        val teamSecretsSlot = slot<TeamSecrets>()
 
         // Act
         teamService.generateJWTMethod("userId", "teamId")
 
         // Assert
-        coVerify { teamRepository.set(any(), match { it.tokenMetadata.isNotEmpty() }) }
-        coVerify { teamSecretsRepository.set(any(), match { it.jwtSecrets.isNotEmpty() }) }
+        coVerify { teamRepository.set(any(), capture(teamSlot)) }
+        assertTrue { teamSlot.captured.tokenMetadata.isNotEmpty() } // or other appropriate checks
+
+        coVerify { teamSecretsRepository.set(any(), capture(teamSecretsSlot)) }
+        assertTrue { teamSecretsSlot.captured.jwtSecrets.isNotEmpty() } // or other appropriate checks
     }
 
     @Test
@@ -131,13 +135,18 @@ class TeamServiceTest {
         mockTeamAndSecretsRepositoriesGet(team)
         val existingSecrets = TeamSecrets(jwtSecrets = mapOf("tokenId" to "jwtSecret"))
         coEvery { teamSecretsRepository.get(any()) } returns existingSecrets
+        val teamSlot = slot<Team>()
+        val teamSecretsSlot = slot<TeamSecrets>()
 
         // Act
         teamService.removeJWTMethod("userId", "teamId", "tokenId")
 
         // Assert
-        coVerify { teamRepository.set(any(), match { !it.tokenMetadata.containsKey("tokenId") }) }
-        coVerify { teamSecretsRepository.set(any(), match { !it.jwtSecrets.containsKey("tokenId") }) }
+        coVerify { teamRepository.set(any(), capture(teamSlot)) }
+        assertFalse { teamSlot.captured.tokenMetadata.containsKey("tokenId") }
+
+        coVerify { teamSecretsRepository.set(any(), capture(teamSecretsSlot)) }
+        assertFalse { teamSecretsSlot.captured.jwtSecrets.containsKey("tokenId") }
     }
 
     private fun mockTeamAndSecretsRepositoriesGet(team: Team) {
@@ -148,6 +157,13 @@ class TeamServiceTest {
     }
 
     private fun mockTeam(): Team {
-        return mockk<Team>(relaxed = true)
+        return Team(
+            name = "teamId",
+            members = mapOf("userId" to Member(
+                role = TeamRole.ADMIN,
+                exists = true
+            )),
+            createdAt = Clock.System.now()
+        )
     }
 }

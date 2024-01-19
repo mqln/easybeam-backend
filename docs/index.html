@@ -689,25 +689,85 @@
   <script>
     // Script section to load models into a JS Var
     var defs = {}
-            defs["AddSecretRequest"] = {
+            defs["ChatInput"] = {
+  "required" : [ "content", "role" ],
   "type" : "object",
   "properties" : {
-    "configId" : {
-      "type" : "string"
+    "content" : {
+      "type" : "string",
+      "description" : "The content of the message"
     },
-    "secrets" : {
+    "role" : {
+      "$ref" : "#/components/schemas/ChatInputRole"
+    }
+  }
+};
+            defs["ChatInputRole"] = {
+  "type" : "string",
+  "description" : "Role of the chat input, either AI or USER",
+  "enum" : [ "AI", "USER" ]
+};
+            defs["GetChatRequest"] = {
+  "type" : "object",
+  "properties" : {
+    "parameters" : {
       "type" : "object",
       "additionalProperties" : {
         "type" : "string"
       }
+    },
+    "chatId" : {
+      "type" : "string",
+      "nullable" : true
+    },
+    "messages" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ChatInput"
+      }
+    },
+    "stream" : {
+      "type" : "boolean"
+    },
+    "userId" : {
+      "type" : "string",
+      "nullable" : true
     }
   }
 };
-            defs["AddTokenResponse"] = {
+            defs["GetChatResponse"] = {
   "type" : "object",
   "properties" : {
-    "jwtToken" : {
+    "newMessage" : {
+      "$ref" : "#/components/schemas/ChatInput"
+    },
+    "chatId" : {
       "type" : "string"
+    }
+  }
+};
+            defs["ReviewRequest"] = {
+  "required" : [ "chatId", "reviewScore" ],
+  "type" : "object",
+  "properties" : {
+    "chatId" : {
+      "type" : "string",
+      "description" : "The ID of the chat being reviewed"
+    },
+    "reviewText" : {
+      "type" : "string",
+      "description" : "Textual content of the review",
+      "nullable" : true
+    },
+    "reviewScore" : {
+      "type" : "number",
+      "description" : "Numerical score of the review",
+      "format" : "double"
+    },
+    "userId" : {
+      "type" : "string",
+      "description" : "ID of the user submitting the review",
+      "nullable" : true
     }
   }
 };
@@ -727,18 +787,13 @@
             -->
             <li class="nav-fixed nav-header active" data-group="_"><a href="#api-_">API Summary</a></li>
 
-                  <li class="nav-header" data-group="Team"><a href="#api-Team">API Methods - Team</a></li>
-                    <li data-group="Team" data-name="addSecrets" class="">
-                      <a href="#api-Team-addSecrets">addSecrets</a>
+                  <li class="nav-header" data-group="Chat"><a href="#api-Chat">API Methods - Chat</a></li>
+                    <li data-group="Chat" data-name="getChat" class="">
+                      <a href="#api-Chat-getChat">getChat</a>
                     </li>
-                    <li data-group="Team" data-name="deleteSecrets" class="">
-                      <a href="#api-Team-deleteSecrets">deleteSecrets</a>
-                    </li>
-                    <li data-group="Team" data-name="generateToken" class="">
-                      <a href="#api-Team-generateToken">generateToken</a>
-                    </li>
-                    <li data-group="Team" data-name="removeToken" class="">
-                      <a href="#api-Team-removeToken">removeToken</a>
+                  <li class="nav-header" data-group="Review"><a href="#api-Review">API Methods - Review</a></li>
+                    <li data-group="Review" data-name="submitReview" class="">
+                      <a href="#api-Review-submitReview">submitReview</a>
                     </li>
           </ul>
         </nav>
@@ -759,13 +814,13 @@
           </div>
         </div>
         <div id="sections">
-                <section id="api-Team">
-                  <h1>Team</h1>
-                    <div id="api-Team-addSecrets">
-                      <article id="api-Team-addSecrets-0" data-group="User" data-name="addSecrets" data-version="0">
+                <section id="api-Chat">
+                  <h1>Chat</h1>
+                    <div id="api-Chat-getChat">
+                      <article id="api-Chat-getChat-0" data-group="User" data-name="getChat" data-version="0">
                         <div class="pull-left">
-                          <h1>addSecrets</h1>
-                          <p>Add secrets for a team</p>
+                          <h1>getChat</h1>
+                          <p>Interact with the chat system</p>
                         </div>
                         <div class="pull-right"></div>
                         <div class="clearfix"></div>
@@ -773,91 +828,91 @@
                         <p class="marked"></p>
                         <p></p>
                         <br />
-                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/team/{id}/secrets</span></code></pre>
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/chat/{id}</span></code></pre>
                         <p>
                           <h3>Usage and SDK Samples</h3>
                         </p>
                         <ul class="nav nav-tabs nav-tabs-examples">
-                          <li class="active"><a href="#examples-Team-addSecrets-0-curl">Curl</a></li>
-                          <li class=""><a href="#examples-Team-addSecrets-0-java">Java</a></li>
-                          <li class=""><a href="#examples-Team-addSecrets-0-android">Android</a></li>
-                          <!--<li class=""><a href="#examples-Team-addSecrets-0-groovy">Groovy</a></li>-->
-                          <li class=""><a href="#examples-Team-addSecrets-0-objc">Obj-C</a></li>
-                          <li class=""><a href="#examples-Team-addSecrets-0-javascript">JavaScript</a></li>
-                          <!--<li class=""><a href="#examples-Team-addSecrets-0-angular">Angular</a></li>-->
-                          <li class=""><a href="#examples-Team-addSecrets-0-csharp">C#</a></li>
-                          <li class=""><a href="#examples-Team-addSecrets-0-php">PHP</a></li>
-                          <li class=""><a href="#examples-Team-addSecrets-0-perl">Perl</a></li>
-                          <li class=""><a href="#examples-Team-addSecrets-0-python">Python</a></li>
+                          <li class="active"><a href="#examples-Chat-getChat-0-curl">Curl</a></li>
+                          <li class=""><a href="#examples-Chat-getChat-0-java">Java</a></li>
+                          <li class=""><a href="#examples-Chat-getChat-0-android">Android</a></li>
+                          <!--<li class=""><a href="#examples-Chat-getChat-0-groovy">Groovy</a></li>-->
+                          <li class=""><a href="#examples-Chat-getChat-0-objc">Obj-C</a></li>
+                          <li class=""><a href="#examples-Chat-getChat-0-javascript">JavaScript</a></li>
+                          <!--<li class=""><a href="#examples-Chat-getChat-0-angular">Angular</a></li>-->
+                          <li class=""><a href="#examples-Chat-getChat-0-csharp">C#</a></li>
+                          <li class=""><a href="#examples-Chat-getChat-0-php">PHP</a></li>
+                          <li class=""><a href="#examples-Chat-getChat-0-perl">Perl</a></li>
+                          <li class=""><a href="#examples-Chat-getChat-0-python">Python</a></li>
                         </ul>
 
                         <div class="tab-content">
-                          <div class="tab-pane active" id="examples-Team-addSecrets-0-curl">
+                          <div class="tab-pane active" id="examples-Chat-getChat-0-curl">
                            <pre class="prettyprint"><code class="language-bsh">curl -X POST\
--H "Accept: text/plain"\
+-H "Accept: application/json"\
 -H "Content-Type: application/json"\
-"//team/{id}/secrets"</code></pre>
+"//chat/{id}"</code></pre>
                           </div>
-                          <div class="tab-pane" id="examples-Team-addSecrets-0-java">
+                          <div class="tab-pane" id="examples-Chat-getChat-0-java">
                             <pre class="prettyprint"><code class="language-java">import io.swagger.client.*;
 import io.swagger.client.auth.*;
 import io.swagger.client.model.*;
-import io.swagger.client.api.TeamApi;
+import io.swagger.client.api.ChatApi;
 
 import java.io.File;
 import java.util.*;
 
-public class TeamApiExample {
+public class ChatApiExample {
 
     public static void main(String[] args) {
         
-        TeamApi apiInstance = new TeamApi();
-        AddSecretRequest body = ; // AddSecretRequest | 
-        String id = id_example; // String | Team ID
+        ChatApi apiInstance = new ChatApi();
+        GetChatRequest body = ; // GetChatRequest | 
+        String id = id_example; // String | Optional prompt ID
         try {
-            'String' result = apiInstance.addSecrets(body, id);
+            GetChatResponse result = apiInstance.getChat(body, id);
             System.out.println(result);
         } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#addSecrets");
+            System.err.println("Exception when calling ChatApi#getChat");
             e.printStackTrace();
         }
     }
 }</code></pre>
                           </div>
 
-                          <div class="tab-pane" id="examples-Team-addSecrets-0-android">
-                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.TeamApi;
+                          <div class="tab-pane" id="examples-Chat-getChat-0-android">
+                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.ChatApi;
 
-public class TeamApiExample {
+public class ChatApiExample {
 
     public static void main(String[] args) {
-        TeamApi apiInstance = new TeamApi();
-        AddSecretRequest body = ; // AddSecretRequest | 
-        String id = id_example; // String | Team ID
+        ChatApi apiInstance = new ChatApi();
+        GetChatRequest body = ; // GetChatRequest | 
+        String id = id_example; // String | Optional prompt ID
         try {
-            'String' result = apiInstance.addSecrets(body, id);
+            GetChatResponse result = apiInstance.getChat(body, id);
             System.out.println(result);
         } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#addSecrets");
+            System.err.println("Exception when calling ChatApi#getChat");
             e.printStackTrace();
         }
     }
 }</code></pre>
                           </div>
   <!--
-  <div class="tab-pane" id="examples-Team-addSecrets-0-groovy">
+  <div class="tab-pane" id="examples-Chat-getChat-0-groovy">
   <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
   </div> -->
-                            <div class="tab-pane" id="examples-Team-addSecrets-0-objc">
-                              <pre class="prettyprint"><code class="language-cpp">AddSecretRequest *body = ; // 
-String *id = id_example; // Team ID
+                            <div class="tab-pane" id="examples-Chat-getChat-0-objc">
+                              <pre class="prettyprint"><code class="language-cpp">GetChatRequest *body = ; // 
+String *id = id_example; // Optional prompt ID
 
-TeamApi *apiInstance = [[TeamApi alloc] init];
+ChatApi *apiInstance = [[ChatApi alloc] init];
 
-// Add secrets for a team
-[apiInstance addSecretsWith:body
+// Interact with the chat system
+[apiInstance getChatWith:body
     id:id
-              completionHandler: ^('String' output, NSError* error) {
+              completionHandler: ^(GetChatResponse output, NSError* error) {
                             if (output) {
                                 NSLog(@"%@", output);
                             }
@@ -868,12 +923,12 @@ TeamApi *apiInstance = [[TeamApi alloc] init];
 </code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-addSecrets-0-javascript">
+                            <div class="tab-pane" id="examples-Chat-getChat-0-javascript">
                               <pre class="prettyprint"><code class="language-js">var EasybeamBackendApi = require('easybeam_backend_api');
 
-var api = new EasybeamBackendApi.TeamApi()
-var body = ; // {{AddSecretRequest}} 
-var id = id_example; // {{String}} Team ID
+var api = new EasybeamBackendApi.ChatApi()
+var body = ; // {{GetChatRequest}} 
+var id = id_example; // {{String}} Optional prompt ID
 
 var callback = function(error, data, response) {
   if (error) {
@@ -882,14 +937,14 @@ var callback = function(error, data, response) {
     console.log('API called successfully. Returned data: ' + data);
   }
 };
-api.addSecrets(bodyid, callback);
+api.getChat(bodyid, callback);
 </code></pre>
                             </div>
 
-                            <!--<div class="tab-pane" id="examples-Team-addSecrets-0-angular">
+                            <!--<div class="tab-pane" id="examples-Chat-getChat-0-angular">
               <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
             </div>-->
-                            <div class="tab-pane" id="examples-Team-addSecrets-0-csharp">
+                            <div class="tab-pane" id="examples-Chat-getChat-0-csharp">
                               <pre class="prettyprint"><code class="language-cs">using System;
 using System.Diagnostics;
 using IO.Swagger.Api;
@@ -898,24 +953,24 @@ using IO.Swagger.Model;
 
 namespace Example
 {
-    public class addSecretsExample
+    public class getChatExample
     {
         public void main()
         {
 
-            var apiInstance = new TeamApi();
-            var body = new AddSecretRequest(); // AddSecretRequest | 
-            var id = id_example;  // String | Team ID
+            var apiInstance = new ChatApi();
+            var body = new GetChatRequest(); // GetChatRequest | 
+            var id = id_example;  // String | Optional prompt ID
 
             try
             {
-                // Add secrets for a team
-                'String' result = apiInstance.addSecrets(body, id);
+                // Interact with the chat system
+                GetChatResponse result = apiInstance.getChat(body, id);
                 Debug.WriteLine(result);
             }
             catch (Exception e)
             {
-                Debug.Print("Exception when calling TeamApi.addSecrets: " + e.Message );
+                Debug.Print("Exception when calling ChatApi.getChat: " + e.Message );
             }
         }
     }
@@ -923,42 +978,42 @@ namespace Example
 </code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-addSecrets-0-php">
+                            <div class="tab-pane" id="examples-Chat-getChat-0-php">
                               <pre class="prettyprint"><code class="language-php"><&#63;php
 require_once(__DIR__ . '/vendor/autoload.php');
 
-$api_instance = new Swagger\Client\ApiTeamApi();
-$body = ; // AddSecretRequest | 
-$id = id_example; // String | Team ID
+$api_instance = new Swagger\Client\ApiChatApi();
+$body = ; // GetChatRequest | 
+$id = id_example; // String | Optional prompt ID
 
 try {
-    $result = $api_instance->addSecrets($body, $id);
+    $result = $api_instance->getChat($body, $id);
     print_r($result);
 } catch (Exception $e) {
-    echo 'Exception when calling TeamApi->addSecrets: ', $e->getMessage(), PHP_EOL;
+    echo 'Exception when calling ChatApi->getChat: ', $e->getMessage(), PHP_EOL;
 }
 ?></code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-addSecrets-0-perl">
+                            <div class="tab-pane" id="examples-Chat-getChat-0-perl">
                               <pre class="prettyprint"><code class="language-perl">use Data::Dumper;
 use WWW::SwaggerClient::Configuration;
-use WWW::SwaggerClient::TeamApi;
+use WWW::SwaggerClient::ChatApi;
 
-my $api_instance = WWW::SwaggerClient::TeamApi->new();
-my $body = WWW::SwaggerClient::Object::AddSecretRequest->new(); # AddSecretRequest | 
-my $id = id_example; # String | Team ID
+my $api_instance = WWW::SwaggerClient::ChatApi->new();
+my $body = WWW::SwaggerClient::Object::GetChatRequest->new(); # GetChatRequest | 
+my $id = id_example; # String | Optional prompt ID
 
 eval { 
-    my $result = $api_instance->addSecrets(body => $body, id => $id);
+    my $result = $api_instance->getChat(body => $body, id => $id);
     print Dumper($result);
 };
 if ($@) {
-    warn "Exception when calling TeamApi->addSecrets: $@\n";
+    warn "Exception when calling ChatApi->getChat: $@\n";
 }</code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-addSecrets-0-python">
+                            <div class="tab-pane" id="examples-Chat-getChat-0-python">
                               <pre class="prettyprint"><code class="language-python">from __future__ import print_statement
 import time
 import swagger_client
@@ -966,16 +1021,16 @@ from swagger_client.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = swagger_client.TeamApi()
-body =  # AddSecretRequest | 
-id = id_example # String | Team ID
+api_instance = swagger_client.ChatApi()
+body =  # GetChatRequest | 
+id = id_example # String | Optional prompt ID
 
 try: 
-    # Add secrets for a team
-    api_response = api_instance.add_secrets(body, id)
+    # Interact with the chat system
+    api_response = api_instance.get_chat(body, id)
     pprint(api_response)
 except ApiException as e:
-    print("Exception when calling TeamApi->addSecrets: %s\n" % e)</code></pre>
+    print("Exception when calling ChatApi->getChat: %s\n" % e)</code></pre>
                             </div>
                           </div>
 
@@ -991,7 +1046,7 @@ except ApiException as e:
                                   <td>
                                   
                                   
-                                      <div id="d2e199_addSecrets_id">
+                                      <div id="d2e199_getChat_id">
                                           <div class="json-schema-view">
                                               <div class="primitive">
                                                   <span class="type">
@@ -999,7 +1054,7 @@ except ApiException as e:
                                                   </span>
                                   
                                                       <div class="inner description">
-                                                          Team ID
+                                                          Optional prompt ID
                                                       </div>
                                               </div>
                                                   <div class="inner required">
@@ -1028,7 +1083,7 @@ except ApiException as e:
   "content" : {
     "application/json" : {
       "schema" : {
-        "$ref" : "#/components/schemas/AddSecretRequest"
+        "$ref" : "#/components/schemas/GetChatRequest"
       }
     }
   },
@@ -1046,12 +1101,12 @@ except ApiException as e:
                                   }
                                 
                                   var view = new JSONSchemaView(schema,2,{isBodyParam: true});
-                                  var result = $('#d2e199_addSecrets_body');
+                                  var result = $('#d2e199_getChat_body');
                                   result.empty();
                                   result.append(view.render());
                                 });
                                 </script>
-                                <div id="d2e199_addSecrets_body"></div>
+                                <div id="d2e199_getChat_body"></div>
                                 </td>
                                 </tr>
                             </table>
@@ -1059,600 +1114,26 @@ except ApiException as e:
 
 
                           <h2>Responses</h2>
-                            <h3> Status: 201 - Secrets added successfully </h3>
+                            <h3> Status: 200 - Chat interaction successful </h3>
 
                             <ul class="nav nav-tabs nav-tabs-examples" >
                                 <li class="active">
-                                  <a data-toggle="tab" href="#responses-addSecrets-201-schema">Schema</a>
+                                  <a data-toggle="tab" href="#responses-getChat-200-schema">Schema</a>
                                 </li>
 
                             </ul>
 
                             <div class="tab-content" style='margin-bottom: 10px;'>
-                                <div class="tab-pane active" id="responses-addSecrets-201-schema">
-                                  <div id='responses-addSecrets-201-schema-201' style="padding: 30px; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                                <div class="tab-pane active" id="responses-getChat-200-schema">
+                                  <div id='responses-getChat-200-schema-200' style="padding: 30px; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
                                     <script>
                                       $(document).ready(function() {
                                         var schemaWrapper = {
-  "description" : "Secrets added successfully",
-  "content" : {
-    "text/plain" : {
-      "schema" : {
-        "type" : "string",
-        "x-content-type" : "text/plain"
-      }
-    }
-  }
-};
-                                        var schema = schemaWrapper.content["text/plain"].schema;
-                                        if (schema.$ref != null) {
-                                          schema = defsParser.$refs.get(schema.$ref);
-                                        } else {
-                                          schemaWrapper.components = {};
-                                          schemaWrapper.components.schemas = Object.assign({}, defs);
-                                          $RefParser.dereference(schemaWrapper).catch(function(err) {
-                                            console.log(err);
-                                          });
-                                        }
-
-                                        //console.log(JSON.stringify(schema));
-                                        var view = new JSONSchemaView(schema, 3);
-                                        $('#responses-addSecrets-201-schema-data').val(stringify(schema));
-                                        var result = $('#responses-addSecrets-201-schema-201');
-                                        result.empty();
-                                        result.append(view.render());
-                                      });
-                                    </script>
-                                  </div>
-                                  <input id='responses-addSecrets-201-schema-data' type='hidden' value=''></input>
-                                </div>
-                            </div>
-
-                        </article>
-                      </div>
-                      <hr>
-                    <div id="api-Team-deleteSecrets">
-                      <article id="api-Team-deleteSecrets-0" data-group="User" data-name="deleteSecrets" data-version="0">
-                        <div class="pull-left">
-                          <h1>deleteSecrets</h1>
-                          <p>Delete a specific secret configuration for a team</p>
-                        </div>
-                        <div class="pull-right"></div>
-                        <div class="clearfix"></div>
-                        <p></p>
-                        <p class="marked"></p>
-                        <p></p>
-                        <br />
-                        <pre class="prettyprint language-html prettyprinted" data-type="delete"><code><span class="pln">/team/{id}/secrets</span></code></pre>
-                        <p>
-                          <h3>Usage and SDK Samples</h3>
-                        </p>
-                        <ul class="nav nav-tabs nav-tabs-examples">
-                          <li class="active"><a href="#examples-Team-deleteSecrets-0-curl">Curl</a></li>
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-java">Java</a></li>
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-android">Android</a></li>
-                          <!--<li class=""><a href="#examples-Team-deleteSecrets-0-groovy">Groovy</a></li>-->
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-objc">Obj-C</a></li>
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-javascript">JavaScript</a></li>
-                          <!--<li class=""><a href="#examples-Team-deleteSecrets-0-angular">Angular</a></li>-->
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-csharp">C#</a></li>
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-php">PHP</a></li>
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-perl">Perl</a></li>
-                          <li class=""><a href="#examples-Team-deleteSecrets-0-python">Python</a></li>
-                        </ul>
-
-                        <div class="tab-content">
-                          <div class="tab-pane active" id="examples-Team-deleteSecrets-0-curl">
-                           <pre class="prettyprint"><code class="language-bsh">curl -X DELETE\
-"//team/{id}/secrets"</code></pre>
-                          </div>
-                          <div class="tab-pane" id="examples-Team-deleteSecrets-0-java">
-                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.*;
-import io.swagger.client.auth.*;
-import io.swagger.client.model.*;
-import io.swagger.client.api.TeamApi;
-
-import java.io.File;
-import java.util.*;
-
-public class TeamApiExample {
-
-    public static void main(String[] args) {
-        
-        TeamApi apiInstance = new TeamApi();
-        String id = id_example; // String | Team ID
-        String configId = configId_example; // String | Config ID of the secret to delete
-        try {
-            apiInstance.deleteSecrets(id, configId);
-        } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#deleteSecrets");
-            e.printStackTrace();
-        }
-    }
-}</code></pre>
-                          </div>
-
-                          <div class="tab-pane" id="examples-Team-deleteSecrets-0-android">
-                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.TeamApi;
-
-public class TeamApiExample {
-
-    public static void main(String[] args) {
-        TeamApi apiInstance = new TeamApi();
-        String id = id_example; // String | Team ID
-        String configId = configId_example; // String | Config ID of the secret to delete
-        try {
-            apiInstance.deleteSecrets(id, configId);
-        } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#deleteSecrets");
-            e.printStackTrace();
-        }
-    }
-}</code></pre>
-                          </div>
-  <!--
-  <div class="tab-pane" id="examples-Team-deleteSecrets-0-groovy">
-  <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
-  </div> -->
-                            <div class="tab-pane" id="examples-Team-deleteSecrets-0-objc">
-                              <pre class="prettyprint"><code class="language-cpp">String *id = id_example; // Team ID
-String *configId = configId_example; // Config ID of the secret to delete
-
-TeamApi *apiInstance = [[TeamApi alloc] init];
-
-// Delete a specific secret configuration for a team
-[apiInstance deleteSecretsWith:id
-    configId:configId
-              completionHandler: ^(NSError* error) {
-                            if (error) {
-                                NSLog(@"Error: %@", error);
-                            }
-                        }];
-</code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-deleteSecrets-0-javascript">
-                              <pre class="prettyprint"><code class="language-js">var EasybeamBackendApi = require('easybeam_backend_api');
-
-var api = new EasybeamBackendApi.TeamApi()
-var id = id_example; // {{String}} Team ID
-var configId = configId_example; // {{String}} Config ID of the secret to delete
-
-var callback = function(error, data, response) {
-  if (error) {
-    console.error(error);
-  } else {
-    console.log('API called successfully.');
-  }
-};
-api.deleteSecrets(id, configId, callback);
-</code></pre>
-                            </div>
-
-                            <!--<div class="tab-pane" id="examples-Team-deleteSecrets-0-angular">
-              <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
-            </div>-->
-                            <div class="tab-pane" id="examples-Team-deleteSecrets-0-csharp">
-                              <pre class="prettyprint"><code class="language-cs">using System;
-using System.Diagnostics;
-using IO.Swagger.Api;
-using IO.Swagger.Client;
-using IO.Swagger.Model;
-
-namespace Example
-{
-    public class deleteSecretsExample
-    {
-        public void main()
-        {
-
-            var apiInstance = new TeamApi();
-            var id = id_example;  // String | Team ID
-            var configId = configId_example;  // String | Config ID of the secret to delete
-
-            try
-            {
-                // Delete a specific secret configuration for a team
-                apiInstance.deleteSecrets(id, configId);
-            }
-            catch (Exception e)
-            {
-                Debug.Print("Exception when calling TeamApi.deleteSecrets: " + e.Message );
-            }
-        }
-    }
-}
-</code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-deleteSecrets-0-php">
-                              <pre class="prettyprint"><code class="language-php"><&#63;php
-require_once(__DIR__ . '/vendor/autoload.php');
-
-$api_instance = new Swagger\Client\ApiTeamApi();
-$id = id_example; // String | Team ID
-$configId = configId_example; // String | Config ID of the secret to delete
-
-try {
-    $api_instance->deleteSecrets($id, $configId);
-} catch (Exception $e) {
-    echo 'Exception when calling TeamApi->deleteSecrets: ', $e->getMessage(), PHP_EOL;
-}
-?></code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-deleteSecrets-0-perl">
-                              <pre class="prettyprint"><code class="language-perl">use Data::Dumper;
-use WWW::SwaggerClient::Configuration;
-use WWW::SwaggerClient::TeamApi;
-
-my $api_instance = WWW::SwaggerClient::TeamApi->new();
-my $id = id_example; # String | Team ID
-my $configId = configId_example; # String | Config ID of the secret to delete
-
-eval { 
-    $api_instance->deleteSecrets(id => $id, configId => $configId);
-};
-if ($@) {
-    warn "Exception when calling TeamApi->deleteSecrets: $@\n";
-}</code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-deleteSecrets-0-python">
-                              <pre class="prettyprint"><code class="language-python">from __future__ import print_statement
-import time
-import swagger_client
-from swagger_client.rest import ApiException
-from pprint import pprint
-
-# create an instance of the API class
-api_instance = swagger_client.TeamApi()
-id = id_example # String | Team ID
-configId = configId_example # String | Config ID of the secret to delete
-
-try: 
-    # Delete a specific secret configuration for a team
-    api_instance.delete_secrets(id, configId)
-except ApiException as e:
-    print("Exception when calling TeamApi->deleteSecrets: %s\n" % e)</code></pre>
-                            </div>
-                          </div>
-
-                          <h2>Parameters</h2>
-
-                            <div class="methodsubtabletitle">Path parameters</div>
-                            <table id="methodsubtable">
-                                <tr>
-                                  <th width="150px">Name</th>
-                                  <th>Description</th>
-                                </tr>
-                                  <tr><td style="width:150px;">id*</td>
-                                  <td>
-                                  
-                                  
-                                      <div id="d2e199_deleteSecrets_id">
-                                          <div class="json-schema-view">
-                                              <div class="primitive">
-                                                  <span class="type">
-                                                      String
-                                                  </span>
-                                  
-                                                      <div class="inner description">
-                                                          Team ID
-                                                      </div>
-                                              </div>
-                                                  <div class="inner required">
-                                                      Required
-                                                  </div>
-                                          </div>
-                                      </div>
-                                  </td>
-                                  </tr>
-                                  <tr><td style="width:150px;">configId*</td>
-                                  <td>
-                                  
-                                  
-                                      <div id="d2e199_deleteSecrets_configId">
-                                          <div class="json-schema-view">
-                                              <div class="primitive">
-                                                  <span class="type">
-                                                      String
-                                                  </span>
-                                  
-                                                      <div class="inner description">
-                                                          Config ID of the secret to delete
-                                                      </div>
-                                              </div>
-                                                  <div class="inner required">
-                                                      Required
-                                                  </div>
-                                          </div>
-                                      </div>
-                                  </td>
-                                  </tr>
-                            </table>
-
-
-
-
-
-                          <h2>Responses</h2>
-                            <h3> Status: 204 - Secret configuration deleted successfully </h3>
-
-                            <ul class="nav nav-tabs nav-tabs-examples" >
-                            </ul>
-
-                            <div class="tab-content" style='margin-bottom: 10px;'>
-                            </div>
-
-                        </article>
-                      </div>
-                      <hr>
-                    <div id="api-Team-generateToken">
-                      <article id="api-Team-generateToken-0" data-group="User" data-name="generateToken" data-version="0">
-                        <div class="pull-left">
-                          <h1>generateToken</h1>
-                          <p>Generate a JWT token for a team</p>
-                        </div>
-                        <div class="pull-right"></div>
-                        <div class="clearfix"></div>
-                        <p></p>
-                        <p class="marked"></p>
-                        <p></p>
-                        <br />
-                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/team/{id}/token</span></code></pre>
-                        <p>
-                          <h3>Usage and SDK Samples</h3>
-                        </p>
-                        <ul class="nav nav-tabs nav-tabs-examples">
-                          <li class="active"><a href="#examples-Team-generateToken-0-curl">Curl</a></li>
-                          <li class=""><a href="#examples-Team-generateToken-0-java">Java</a></li>
-                          <li class=""><a href="#examples-Team-generateToken-0-android">Android</a></li>
-                          <!--<li class=""><a href="#examples-Team-generateToken-0-groovy">Groovy</a></li>-->
-                          <li class=""><a href="#examples-Team-generateToken-0-objc">Obj-C</a></li>
-                          <li class=""><a href="#examples-Team-generateToken-0-javascript">JavaScript</a></li>
-                          <!--<li class=""><a href="#examples-Team-generateToken-0-angular">Angular</a></li>-->
-                          <li class=""><a href="#examples-Team-generateToken-0-csharp">C#</a></li>
-                          <li class=""><a href="#examples-Team-generateToken-0-php">PHP</a></li>
-                          <li class=""><a href="#examples-Team-generateToken-0-perl">Perl</a></li>
-                          <li class=""><a href="#examples-Team-generateToken-0-python">Python</a></li>
-                        </ul>
-
-                        <div class="tab-content">
-                          <div class="tab-pane active" id="examples-Team-generateToken-0-curl">
-                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
--H "Accept: application/json"\
-"//team/{id}/token"</code></pre>
-                          </div>
-                          <div class="tab-pane" id="examples-Team-generateToken-0-java">
-                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.*;
-import io.swagger.client.auth.*;
-import io.swagger.client.model.*;
-import io.swagger.client.api.TeamApi;
-
-import java.io.File;
-import java.util.*;
-
-public class TeamApiExample {
-
-    public static void main(String[] args) {
-        
-        TeamApi apiInstance = new TeamApi();
-        String id = id_example; // String | Team ID
-        try {
-            AddTokenResponse result = apiInstance.generateToken(id);
-            System.out.println(result);
-        } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#generateToken");
-            e.printStackTrace();
-        }
-    }
-}</code></pre>
-                          </div>
-
-                          <div class="tab-pane" id="examples-Team-generateToken-0-android">
-                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.TeamApi;
-
-public class TeamApiExample {
-
-    public static void main(String[] args) {
-        TeamApi apiInstance = new TeamApi();
-        String id = id_example; // String | Team ID
-        try {
-            AddTokenResponse result = apiInstance.generateToken(id);
-            System.out.println(result);
-        } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#generateToken");
-            e.printStackTrace();
-        }
-    }
-}</code></pre>
-                          </div>
-  <!--
-  <div class="tab-pane" id="examples-Team-generateToken-0-groovy">
-  <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
-  </div> -->
-                            <div class="tab-pane" id="examples-Team-generateToken-0-objc">
-                              <pre class="prettyprint"><code class="language-cpp">String *id = id_example; // Team ID
-
-TeamApi *apiInstance = [[TeamApi alloc] init];
-
-// Generate a JWT token for a team
-[apiInstance generateTokenWith:id
-              completionHandler: ^(AddTokenResponse output, NSError* error) {
-                            if (output) {
-                                NSLog(@"%@", output);
-                            }
-                            if (error) {
-                                NSLog(@"Error: %@", error);
-                            }
-                        }];
-</code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-generateToken-0-javascript">
-                              <pre class="prettyprint"><code class="language-js">var EasybeamBackendApi = require('easybeam_backend_api');
-
-var api = new EasybeamBackendApi.TeamApi()
-var id = id_example; // {{String}} Team ID
-
-var callback = function(error, data, response) {
-  if (error) {
-    console.error(error);
-  } else {
-    console.log('API called successfully. Returned data: ' + data);
-  }
-};
-api.generateToken(id, callback);
-</code></pre>
-                            </div>
-
-                            <!--<div class="tab-pane" id="examples-Team-generateToken-0-angular">
-              <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
-            </div>-->
-                            <div class="tab-pane" id="examples-Team-generateToken-0-csharp">
-                              <pre class="prettyprint"><code class="language-cs">using System;
-using System.Diagnostics;
-using IO.Swagger.Api;
-using IO.Swagger.Client;
-using IO.Swagger.Model;
-
-namespace Example
-{
-    public class generateTokenExample
-    {
-        public void main()
-        {
-
-            var apiInstance = new TeamApi();
-            var id = id_example;  // String | Team ID
-
-            try
-            {
-                // Generate a JWT token for a team
-                AddTokenResponse result = apiInstance.generateToken(id);
-                Debug.WriteLine(result);
-            }
-            catch (Exception e)
-            {
-                Debug.Print("Exception when calling TeamApi.generateToken: " + e.Message );
-            }
-        }
-    }
-}
-</code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-generateToken-0-php">
-                              <pre class="prettyprint"><code class="language-php"><&#63;php
-require_once(__DIR__ . '/vendor/autoload.php');
-
-$api_instance = new Swagger\Client\ApiTeamApi();
-$id = id_example; // String | Team ID
-
-try {
-    $result = $api_instance->generateToken($id);
-    print_r($result);
-} catch (Exception $e) {
-    echo 'Exception when calling TeamApi->generateToken: ', $e->getMessage(), PHP_EOL;
-}
-?></code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-generateToken-0-perl">
-                              <pre class="prettyprint"><code class="language-perl">use Data::Dumper;
-use WWW::SwaggerClient::Configuration;
-use WWW::SwaggerClient::TeamApi;
-
-my $api_instance = WWW::SwaggerClient::TeamApi->new();
-my $id = id_example; # String | Team ID
-
-eval { 
-    my $result = $api_instance->generateToken(id => $id);
-    print Dumper($result);
-};
-if ($@) {
-    warn "Exception when calling TeamApi->generateToken: $@\n";
-}</code></pre>
-                            </div>
-
-                            <div class="tab-pane" id="examples-Team-generateToken-0-python">
-                              <pre class="prettyprint"><code class="language-python">from __future__ import print_statement
-import time
-import swagger_client
-from swagger_client.rest import ApiException
-from pprint import pprint
-
-# create an instance of the API class
-api_instance = swagger_client.TeamApi()
-id = id_example # String | Team ID
-
-try: 
-    # Generate a JWT token for a team
-    api_response = api_instance.generate_token(id)
-    pprint(api_response)
-except ApiException as e:
-    print("Exception when calling TeamApi->generateToken: %s\n" % e)</code></pre>
-                            </div>
-                          </div>
-
-                          <h2>Parameters</h2>
-
-                            <div class="methodsubtabletitle">Path parameters</div>
-                            <table id="methodsubtable">
-                                <tr>
-                                  <th width="150px">Name</th>
-                                  <th>Description</th>
-                                </tr>
-                                  <tr><td style="width:150px;">id*</td>
-                                  <td>
-                                  
-                                  
-                                      <div id="d2e199_generateToken_id">
-                                          <div class="json-schema-view">
-                                              <div class="primitive">
-                                                  <span class="type">
-                                                      String
-                                                  </span>
-                                  
-                                                      <div class="inner description">
-                                                          Team ID
-                                                      </div>
-                                              </div>
-                                                  <div class="inner required">
-                                                      Required
-                                                  </div>
-                                          </div>
-                                      </div>
-                                  </td>
-                                  </tr>
-                            </table>
-
-
-
-
-
-                          <h2>Responses</h2>
-                            <h3> Status: 201 - JWT token generated successfully </h3>
-
-                            <ul class="nav nav-tabs nav-tabs-examples" >
-                                <li class="active">
-                                  <a data-toggle="tab" href="#responses-generateToken-201-schema">Schema</a>
-                                </li>
-
-                            </ul>
-
-                            <div class="tab-content" style='margin-bottom: 10px;'>
-                                <div class="tab-pane active" id="responses-generateToken-201-schema">
-                                  <div id='responses-generateToken-201-schema-201' style="padding: 30px; border-left: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
-                                    <script>
-                                      $(document).ready(function() {
-                                        var schemaWrapper = {
-  "description" : "JWT token generated successfully",
+  "description" : "Chat interaction successful",
   "content" : {
     "application/json" : {
       "schema" : {
-        "$ref" : "#/components/schemas/AddTokenResponse"
+        "$ref" : "#/components/schemas/GetChatResponse"
       }
     }
   }
@@ -1670,25 +1151,36 @@ except ApiException as e:
 
                                         //console.log(JSON.stringify(schema));
                                         var view = new JSONSchemaView(schema, 3);
-                                        $('#responses-generateToken-201-schema-data').val(stringify(schema));
-                                        var result = $('#responses-generateToken-201-schema-201');
+                                        $('#responses-getChat-200-schema-data').val(stringify(schema));
+                                        var result = $('#responses-getChat-200-schema-200');
                                         result.empty();
                                         result.append(view.render());
                                       });
                                     </script>
                                   </div>
-                                  <input id='responses-generateToken-201-schema-data' type='hidden' value=''></input>
+                                  <input id='responses-getChat-200-schema-data' type='hidden' value=''></input>
                                 </div>
+                            </div>
+
+                            <h3> Status: 400 - Bad request, e.g., missing id </h3>
+
+                            <ul class="nav nav-tabs nav-tabs-examples" >
+                            </ul>
+
+                            <div class="tab-content" style='margin-bottom: 10px;'>
                             </div>
 
                         </article>
                       </div>
                       <hr>
-                    <div id="api-Team-removeToken">
-                      <article id="api-Team-removeToken-0" data-group="User" data-name="removeToken" data-version="0">
+                  </section>
+                <section id="api-Review">
+                  <h1>Review</h1>
+                    <div id="api-Review-submitReview">
+                      <article id="api-Review-submitReview-0" data-group="User" data-name="submitReview" data-version="0">
                         <div class="pull-left">
-                          <h1>removeToken</h1>
-                          <p>Remove a JWT token for a team</p>
+                          <h1>submitReview</h1>
+                          <p>Submit a review</p>
                         </div>
                         <div class="pull-right"></div>
                         <div class="clearfix"></div>
@@ -1696,86 +1188,83 @@ except ApiException as e:
                         <p class="marked"></p>
                         <p></p>
                         <br />
-                        <pre class="prettyprint language-html prettyprinted" data-type="delete"><code><span class="pln">/team/{id}/token</span></code></pre>
+                        <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/review</span></code></pre>
                         <p>
                           <h3>Usage and SDK Samples</h3>
                         </p>
                         <ul class="nav nav-tabs nav-tabs-examples">
-                          <li class="active"><a href="#examples-Team-removeToken-0-curl">Curl</a></li>
-                          <li class=""><a href="#examples-Team-removeToken-0-java">Java</a></li>
-                          <li class=""><a href="#examples-Team-removeToken-0-android">Android</a></li>
-                          <!--<li class=""><a href="#examples-Team-removeToken-0-groovy">Groovy</a></li>-->
-                          <li class=""><a href="#examples-Team-removeToken-0-objc">Obj-C</a></li>
-                          <li class=""><a href="#examples-Team-removeToken-0-javascript">JavaScript</a></li>
-                          <!--<li class=""><a href="#examples-Team-removeToken-0-angular">Angular</a></li>-->
-                          <li class=""><a href="#examples-Team-removeToken-0-csharp">C#</a></li>
-                          <li class=""><a href="#examples-Team-removeToken-0-php">PHP</a></li>
-                          <li class=""><a href="#examples-Team-removeToken-0-perl">Perl</a></li>
-                          <li class=""><a href="#examples-Team-removeToken-0-python">Python</a></li>
+                          <li class="active"><a href="#examples-Review-submitReview-0-curl">Curl</a></li>
+                          <li class=""><a href="#examples-Review-submitReview-0-java">Java</a></li>
+                          <li class=""><a href="#examples-Review-submitReview-0-android">Android</a></li>
+                          <!--<li class=""><a href="#examples-Review-submitReview-0-groovy">Groovy</a></li>-->
+                          <li class=""><a href="#examples-Review-submitReview-0-objc">Obj-C</a></li>
+                          <li class=""><a href="#examples-Review-submitReview-0-javascript">JavaScript</a></li>
+                          <!--<li class=""><a href="#examples-Review-submitReview-0-angular">Angular</a></li>-->
+                          <li class=""><a href="#examples-Review-submitReview-0-csharp">C#</a></li>
+                          <li class=""><a href="#examples-Review-submitReview-0-php">PHP</a></li>
+                          <li class=""><a href="#examples-Review-submitReview-0-perl">Perl</a></li>
+                          <li class=""><a href="#examples-Review-submitReview-0-python">Python</a></li>
                         </ul>
 
                         <div class="tab-content">
-                          <div class="tab-pane active" id="examples-Team-removeToken-0-curl">
-                           <pre class="prettyprint"><code class="language-bsh">curl -X DELETE\
-"//team/{id}/token"</code></pre>
+                          <div class="tab-pane active" id="examples-Review-submitReview-0-curl">
+                           <pre class="prettyprint"><code class="language-bsh">curl -X POST\
+-H "Content-Type: application/json"\
+"//review"</code></pre>
                           </div>
-                          <div class="tab-pane" id="examples-Team-removeToken-0-java">
+                          <div class="tab-pane" id="examples-Review-submitReview-0-java">
                             <pre class="prettyprint"><code class="language-java">import io.swagger.client.*;
 import io.swagger.client.auth.*;
 import io.swagger.client.model.*;
-import io.swagger.client.api.TeamApi;
+import io.swagger.client.api.ReviewApi;
 
 import java.io.File;
 import java.util.*;
 
-public class TeamApiExample {
+public class ReviewApiExample {
 
     public static void main(String[] args) {
         
-        TeamApi apiInstance = new TeamApi();
-        String id = id_example; // String | Team ID
-        String tokenId = tokenId_example; // String | Token ID to remove
+        ReviewApi apiInstance = new ReviewApi();
+        ReviewRequest body = ; // ReviewRequest | 
         try {
-            apiInstance.removeToken(id, tokenId);
+            apiInstance.submitReview(body);
         } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#removeToken");
+            System.err.println("Exception when calling ReviewApi#submitReview");
             e.printStackTrace();
         }
     }
 }</code></pre>
                           </div>
 
-                          <div class="tab-pane" id="examples-Team-removeToken-0-android">
-                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.TeamApi;
+                          <div class="tab-pane" id="examples-Review-submitReview-0-android">
+                            <pre class="prettyprint"><code class="language-java">import io.swagger.client.api.ReviewApi;
 
-public class TeamApiExample {
+public class ReviewApiExample {
 
     public static void main(String[] args) {
-        TeamApi apiInstance = new TeamApi();
-        String id = id_example; // String | Team ID
-        String tokenId = tokenId_example; // String | Token ID to remove
+        ReviewApi apiInstance = new ReviewApi();
+        ReviewRequest body = ; // ReviewRequest | 
         try {
-            apiInstance.removeToken(id, tokenId);
+            apiInstance.submitReview(body);
         } catch (ApiException e) {
-            System.err.println("Exception when calling TeamApi#removeToken");
+            System.err.println("Exception when calling ReviewApi#submitReview");
             e.printStackTrace();
         }
     }
 }</code></pre>
                           </div>
   <!--
-  <div class="tab-pane" id="examples-Team-removeToken-0-groovy">
+  <div class="tab-pane" id="examples-Review-submitReview-0-groovy">
   <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
   </div> -->
-                            <div class="tab-pane" id="examples-Team-removeToken-0-objc">
-                              <pre class="prettyprint"><code class="language-cpp">String *id = id_example; // Team ID
-String *tokenId = tokenId_example; // Token ID to remove
+                            <div class="tab-pane" id="examples-Review-submitReview-0-objc">
+                              <pre class="prettyprint"><code class="language-cpp">ReviewRequest *body = ; // 
 
-TeamApi *apiInstance = [[TeamApi alloc] init];
+ReviewApi *apiInstance = [[ReviewApi alloc] init];
 
-// Remove a JWT token for a team
-[apiInstance removeTokenWith:id
-    tokenId:tokenId
+// Submit a review
+[apiInstance submitReviewWith:body
               completionHandler: ^(NSError* error) {
                             if (error) {
                                 NSLog(@"Error: %@", error);
@@ -1784,12 +1273,11 @@ TeamApi *apiInstance = [[TeamApi alloc] init];
 </code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-removeToken-0-javascript">
+                            <div class="tab-pane" id="examples-Review-submitReview-0-javascript">
                               <pre class="prettyprint"><code class="language-js">var EasybeamBackendApi = require('easybeam_backend_api');
 
-var api = new EasybeamBackendApi.TeamApi()
-var id = id_example; // {{String}} Team ID
-var tokenId = tokenId_example; // {{String}} Token ID to remove
+var api = new EasybeamBackendApi.ReviewApi()
+var body = ; // {{ReviewRequest}} 
 
 var callback = function(error, data, response) {
   if (error) {
@@ -1798,14 +1286,14 @@ var callback = function(error, data, response) {
     console.log('API called successfully.');
   }
 };
-api.removeToken(id, tokenId, callback);
+api.submitReview(body, callback);
 </code></pre>
                             </div>
 
-                            <!--<div class="tab-pane" id="examples-Team-removeToken-0-angular">
+                            <!--<div class="tab-pane" id="examples-Review-submitReview-0-angular">
               <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
             </div>-->
-                            <div class="tab-pane" id="examples-Team-removeToken-0-csharp">
+                            <div class="tab-pane" id="examples-Review-submitReview-0-csharp">
                               <pre class="prettyprint"><code class="language-cs">using System;
 using System.Diagnostics;
 using IO.Swagger.Api;
@@ -1814,23 +1302,22 @@ using IO.Swagger.Model;
 
 namespace Example
 {
-    public class removeTokenExample
+    public class submitReviewExample
     {
         public void main()
         {
 
-            var apiInstance = new TeamApi();
-            var id = id_example;  // String | Team ID
-            var tokenId = tokenId_example;  // String | Token ID to remove
+            var apiInstance = new ReviewApi();
+            var body = new ReviewRequest(); // ReviewRequest | 
 
             try
             {
-                // Remove a JWT token for a team
-                apiInstance.removeToken(id, tokenId);
+                // Submit a review
+                apiInstance.submitReview(body);
             }
             catch (Exception e)
             {
-                Debug.Print("Exception when calling TeamApi.removeToken: " + e.Message );
+                Debug.Print("Exception when calling ReviewApi.submitReview: " + e.Message );
             }
         }
     }
@@ -1838,40 +1325,38 @@ namespace Example
 </code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-removeToken-0-php">
+                            <div class="tab-pane" id="examples-Review-submitReview-0-php">
                               <pre class="prettyprint"><code class="language-php"><&#63;php
 require_once(__DIR__ . '/vendor/autoload.php');
 
-$api_instance = new Swagger\Client\ApiTeamApi();
-$id = id_example; // String | Team ID
-$tokenId = tokenId_example; // String | Token ID to remove
+$api_instance = new Swagger\Client\ApiReviewApi();
+$body = ; // ReviewRequest | 
 
 try {
-    $api_instance->removeToken($id, $tokenId);
+    $api_instance->submitReview($body);
 } catch (Exception $e) {
-    echo 'Exception when calling TeamApi->removeToken: ', $e->getMessage(), PHP_EOL;
+    echo 'Exception when calling ReviewApi->submitReview: ', $e->getMessage(), PHP_EOL;
 }
 ?></code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-removeToken-0-perl">
+                            <div class="tab-pane" id="examples-Review-submitReview-0-perl">
                               <pre class="prettyprint"><code class="language-perl">use Data::Dumper;
 use WWW::SwaggerClient::Configuration;
-use WWW::SwaggerClient::TeamApi;
+use WWW::SwaggerClient::ReviewApi;
 
-my $api_instance = WWW::SwaggerClient::TeamApi->new();
-my $id = id_example; # String | Team ID
-my $tokenId = tokenId_example; # String | Token ID to remove
+my $api_instance = WWW::SwaggerClient::ReviewApi->new();
+my $body = WWW::SwaggerClient::Object::ReviewRequest->new(); # ReviewRequest | 
 
 eval { 
-    $api_instance->removeToken(id => $id, tokenId => $tokenId);
+    $api_instance->submitReview(body => $body);
 };
 if ($@) {
-    warn "Exception when calling TeamApi->removeToken: $@\n";
+    warn "Exception when calling ReviewApi->submitReview: $@\n";
 }</code></pre>
                             </div>
 
-                            <div class="tab-pane" id="examples-Team-removeToken-0-python">
+                            <div class="tab-pane" id="examples-Review-submitReview-0-python">
                               <pre class="prettyprint"><code class="language-python">from __future__ import print_statement
 import time
 import swagger_client
@@ -1879,78 +1364,69 @@ from swagger_client.rest import ApiException
 from pprint import pprint
 
 # create an instance of the API class
-api_instance = swagger_client.TeamApi()
-id = id_example # String | Team ID
-tokenId = tokenId_example # String | Token ID to remove
+api_instance = swagger_client.ReviewApi()
+body =  # ReviewRequest | 
 
 try: 
-    # Remove a JWT token for a team
-    api_instance.remove_token(id, tokenId)
+    # Submit a review
+    api_instance.submit_review(body)
 except ApiException as e:
-    print("Exception when calling TeamApi->removeToken: %s\n" % e)</code></pre>
+    print("Exception when calling ReviewApi->submitReview: %s\n" % e)</code></pre>
                             </div>
                           </div>
 
                           <h2>Parameters</h2>
 
-                            <div class="methodsubtabletitle">Path parameters</div>
+
+
+                            <div class="methodsubtabletitle">Body parameters</div>
                             <table id="methodsubtable">
-                                <tr>
-                                  <th width="150px">Name</th>
-                                  <th>Description</th>
+                              <tr>
+                                <th width="150px">Name</th>
+                                <th>Description</th>
+                              </tr>
+                                <tr><td style="width:150px;">body <span style="color:red;">*</span></td>
+                                <td>
+                                
+                                
+                                <script>
+                                $(document).ready(function() {
+                                  var schemaWrapper = {
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/ReviewRequest"
+      }
+    }
+  },
+  "required" : true
+};
+                                  var schema = schemaWrapper.content["application/json"].schema;
+                                  if (schema.$ref != null) {
+                                    schema = defsParser.$refs.get(schema.$ref);
+                                  } else {
+                                    schemaWrapper.components = {};
+                                    schemaWrapper.components.schemas = Object.assign({}, defs);
+                                    $RefParser.dereference(schemaWrapper).catch(function(err) {
+                                      console.log(err);
+                                    });
+                                  }
+                                
+                                  var view = new JSONSchemaView(schema,2,{isBodyParam: true});
+                                  var result = $('#d2e199_submitReview_body');
+                                  result.empty();
+                                  result.append(view.render());
+                                });
+                                </script>
+                                <div id="d2e199_submitReview_body"></div>
+                                </td>
                                 </tr>
-                                  <tr><td style="width:150px;">id*</td>
-                                  <td>
-                                  
-                                  
-                                      <div id="d2e199_removeToken_id">
-                                          <div class="json-schema-view">
-                                              <div class="primitive">
-                                                  <span class="type">
-                                                      String
-                                                  </span>
-                                  
-                                                      <div class="inner description">
-                                                          Team ID
-                                                      </div>
-                                              </div>
-                                                  <div class="inner required">
-                                                      Required
-                                                  </div>
-                                          </div>
-                                      </div>
-                                  </td>
-                                  </tr>
-                                  <tr><td style="width:150px;">tokenId*</td>
-                                  <td>
-                                  
-                                  
-                                      <div id="d2e199_removeToken_tokenId">
-                                          <div class="json-schema-view">
-                                              <div class="primitive">
-                                                  <span class="type">
-                                                      String
-                                                  </span>
-                                  
-                                                      <div class="inner description">
-                                                          Token ID to remove
-                                                      </div>
-                                              </div>
-                                                  <div class="inner required">
-                                                      Required
-                                                  </div>
-                                          </div>
-                                      </div>
-                                  </td>
-                                  </tr>
                             </table>
 
 
 
-
-
                           <h2>Responses</h2>
-                            <h3> Status: 204 - JWT token removed successfully </h3>
+                            <h3> Status: 200 - Review submitted successfully </h3>
 
                             <ul class="nav nav-tabs nav-tabs-examples" >
                             </ul>

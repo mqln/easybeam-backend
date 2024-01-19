@@ -34,6 +34,23 @@ paths:
         '400':
           description: Bad request, e.g., missing id
 
+  /review:
+    post:
+      summary: Submit a review
+      operationId: submitReview
+      tags:
+        - Review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '200':
+          description: Review submitted successfully
+
+
   /team/{id}/secrets:
     post:
       summary: Add secrets for a team
@@ -188,3 +205,24 @@ components:
         - AI
         - USER
       description: Role of the chat input, either AI or USER
+    ReviewRequest:
+      type: object
+      required:
+        - chatId
+        - reviewScore
+      properties:
+        chatId:
+          type: string
+          description: The ID of the chat being reviewed
+        reviewText:
+          type: string
+          nullable: true
+          description: Textual content of the review
+        reviewScore:
+          type: number
+          format: double
+          description: Numerical score of the review
+        userId:
+          type: string
+          nullable: true
+          description: ID of the user submitting the review

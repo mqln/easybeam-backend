@@ -17,10 +17,8 @@ import com.pollywog.teams.*
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import com.pollywog.teams.JWTTokenProvider
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import redis.clients.jedis.JedisPool
-import redis.clients.jedis.JedisPoolConfig
+import io.ktor.server.plugins.openapi.*
+import io.ktor.server.routing.route
 
 fun Application.configureRouting() {
     val config = environment.config
@@ -36,7 +34,9 @@ fun Application.configureRouting() {
     val pipelineCache = if (isLocal()) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
 
     routing {
-        route("/v1") {
+        openAPI(path="openapi", swaggerFile = "openapi/documentation.yaml")
+
+        route("/api") {
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
                 promptRepoIdProvider = FirestorePromptIdProvider(),

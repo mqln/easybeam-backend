@@ -49,11 +49,13 @@ dependencies {
     implementation("com.aallam.openai:openai-client:3.4.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     implementation("redis.clients:jedis:5.0.2")
+    implementation("io.ktor:ktor-server-openapi:2.3.3")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.mockk:mockk:1.13.9")
+    implementation("io.ktor:ktor-server-openapi:$ktor_version")
 }
 
 ktor {

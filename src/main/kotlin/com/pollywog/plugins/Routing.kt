@@ -36,7 +36,7 @@ fun Application.configureRouting() {
     val pipelineCache = if (isLocal()) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
 
     routing {
-        route("/api") {
+        route("/v1") {
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
                 promptRepoIdProvider = FirestorePromptIdProvider(),

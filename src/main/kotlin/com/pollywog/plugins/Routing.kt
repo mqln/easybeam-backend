@@ -36,7 +36,7 @@ fun Application.configureRouting() {
     routing {
         openAPI(path="openapi", swaggerFile = "openapi/documentation.yaml")
 
-        route("/api") {
+        route("/v1") {
             val promptService = PromptService(
                 promptRepository = FirestoreRepository(serializer = Prompt.serializer()),
                 promptRepoIdProvider = FirestorePromptIdProvider(),

@@ -1,0 +1,121 @@
+openapi: 3.0.0
+info:
+  title: Easybeam Backend API
+  version: 1.0.0
+  description: OpenAPI specification for Easybeam Backend.
+
+paths:
+  /chat/{id}:
+    post:
+      summary: Interact with the chat system
+      operationId: getChat
+      tags:
+        - Chat
+      parameters:
+        - in: path
+          name: id
+          required: false
+          schema:
+            type: string
+          description: Optional prompt ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetChatRequest'
+      responses:
+        '200':
+          description: Chat interaction successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChatResponse'
+        '400':
+          description: Bad request, e.g., missing id
+
+  /review:
+    post:
+      summary: Submit a review
+      operationId: submitReview
+      tags:
+        - Review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '200':
+          description: Review submitted successfully
+
+components:
+  schemas:
+    GetChatRequest:
+      type: object
+      properties:
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+        chatId:
+          type: string
+          nullable: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatInput'
+        stream:
+          type: boolean
+        userId:
+          type: string
+          nullable: true
+
+    GetChatResponse:
+      type: object
+      properties:
+        newMessage:
+          $ref: '#/components/schemas/ChatInput'
+        chatId:
+          type: string
+
+    ChatInput:
+      type: object
+      required:
+        - content
+        - role
+      properties:
+        content:
+          type: string
+          description: The content of the message
+        role:
+          $ref: '#/components/schemas/ChatInputRole'
+
+    ChatInputRole:
+      type: string
+      enum:
+        - AI
+        - USER
+      description: Role of the chat input, either AI or USER
+    ReviewRequest:
+      type: object
+      required:
+        - chatId
+        - reviewScore
+      properties:
+        chatId:
+          type: string
+          description: The ID of the chat being reviewed
+        reviewText:
+          type: string
+          nullable: true
+          description: Textual content of the review
+        reviewScore:
+          type: number
+          format: double
+          description: Numerical score of the review
+        userId:
+          type: string
+          nullable: true
+          description: ID of the user submitting the review

@@ -28,5 +28,6 @@ fun Application.module() {
         anyHost()
     }
     configureAuthentication()
+
     configureRouting()
 }

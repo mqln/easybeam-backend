@@ -11,7 +11,12 @@ import kotlin.time.TimeSource
 import kotlinx.coroutines.async
 
 
-data class HealthCheck(val internal: Map<String, HealthStatus>, val external: Map<String, HealthStatus>)
+data class HealthCheck(
+    val internalOverall: HealthStatus,
+    val internal: Map<String, HealthStatus>,
+    val externalOverall: HealthStatus,
+    val external: Map<String, HealthStatus>
+)
 
 class HealthService(
     private val teamId: String,
@@ -30,7 +35,12 @@ class HealthService(
         val cacheHealth = cacheHealthDeferred.await()
         val internal = mapOf("repo" to repoHealth, "cache" to cacheHealth)
 
-        return@coroutineScope HealthCheck(internal = internal, external = emptyMap())
+        return@coroutineScope HealthCheck(
+            internalOverall = repoHealth,
+            internal = internal,
+            externalOverall = HealthStatus.HEALTHY,
+            external = emptyMap()
+        )
     }
 
     private suspend fun repoCheck(): HealthStatus {

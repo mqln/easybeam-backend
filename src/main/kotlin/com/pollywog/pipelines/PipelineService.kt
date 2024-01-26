@@ -1,11 +1,11 @@
 package com.pollywog.pipelines
 
 import com.pollywog.common.Cache
+import com.pollywog.common.Loggable
 import com.pollywog.common.Repository
 import com.pollywog.prompts.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import org.slf4j.LoggerFactory
 
 class PipelineService(
     private val promptService: PromptServiceInterface,
@@ -13,10 +13,7 @@ class PipelineService(
     private val pipelineRepoIdProvider: PipelineIdProvider,
     private val pipelineCache: Cache<Pipeline>,
     private val pipelineCacheIdProvider: PipelineIdProvider,
-) {
-
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
+): Loggable {
     data class LastStepData(
         val lastStep: PipelineAction,
         val parameters: Map<String, String>,

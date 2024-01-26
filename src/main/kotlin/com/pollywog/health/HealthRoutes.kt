@@ -16,10 +16,13 @@ data class HealthResponse(
 fun Route.healthRouting(healthService: HealthService) {
     get("health") {
         val health = healthService.healthCheck()
-        call.respond(HealthResponse(
-            internalOverall = health.internalOverall,
-            internal = health.internal,
-            externalOverall = health.externalOverall,
-            external = health.external))
+        call.respond(
+            HealthResponse(
+                internalOverall = health.internalOverall,
+                internal = health.internal,
+                externalOverall = health.externalOverall,
+                external = health.external
+            )
+        )
     }
 }

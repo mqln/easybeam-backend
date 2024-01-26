@@ -3,6 +3,8 @@ package com.pollywog.plugins
 import com.pollywog.common.FakeCache
 import com.pollywog.common.FirestoreRepository
 import com.pollywog.common.RedisCache
+import com.pollywog.health.HealthService
+import com.pollywog.health.healthRouting
 import com.pollywog.pipelines.*
 import com.pollywog.promptTests.FirestorePromptTestRunIdProvider
 import com.pollywog.promptTests.PromptTestRun
@@ -19,6 +21,8 @@ import io.ktor.server.routing.*
 import com.pollywog.teams.JWTTokenProvider
 import io.ktor.server.plugins.openapi.*
 import io.ktor.server.routing.route
+import java.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 fun Application.configureRouting() {
     val config = environment.config
@@ -26,15 +30,25 @@ fun Application.configureRouting() {
     val encryptionSecret = aesConfig.property("serverSecret").getString()
     val decryptionSecret = aesConfig.property("clientSecret").getString()
     val jwtConfig = getJWTConfig()
+    val healthConfig = config.config("health")
+    val healthTeamId = healthConfig.property("teamId").getString()
+    val healthRepoLimit = healthConfig.property("repoLimit").getString().toLong().milliseconds
+    val healthCacheLimit = healthConfig.property("cacheLimit").getString().toLong().milliseconds
 
     val jedisPool = jedisPool()
-    val promptCache = if (isLocal()) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
-    val teamSecretsCache = if (isLocal()) FakeCache(serializer = TeamSecrets.serializer()) else RedisCache(jedisPool, TeamSecrets.serializer())
-    val teamSubscriptionCache = if (isLocal()) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(jedisPool, TeamSubscription.serializer())
-    val pipelineCache = if (isLocal()) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
+    val promptCache =
+        if (isLocal()) FakeCache(serializer = Prompt.serializer()) else RedisCache(jedisPool, Prompt.serializer())
+    val teamSecretsCache = if (isLocal()) FakeCache(serializer = TeamSecrets.serializer()) else RedisCache(
+        jedisPool, TeamSecrets.serializer()
+    )
+    val teamSubscriptionCache = if (isLocal()) FakeCache(serializer = TeamSubscription.serializer()) else RedisCache(
+        jedisPool, TeamSubscription.serializer()
+    )
+    val pipelineCache =
+        if (isLocal()) FakeCache(serializer = Pipeline.serializer()) else RedisCache(jedisPool, Pipeline.serializer())
 
     routing {
-        openAPI(path="openapi", swaggerFile = "openapi/documentation.yaml")
+        openAPI(path = "openapi", swaggerFile = "openapi/documentation.yaml")
 
         route("/v1") {
             val promptService = PromptService(
@@ -99,6 +113,17 @@ fun Application.configureRouting() {
                 versionIdProvider = FirestorePromptVersionIdProvider()
             )
             reviewRouting(reviewService = reviewService)
+
+            val healthService = HealthService(
+                teamId = healthTeamId,
+                teamSecretsRepository = FirestoreRepository(serializer = TeamSecrets.serializer()),
+                teamSecretsRepoIdProvider = FirestoreTeamSecretsIdProvider(),
+                teamSecretsCache = teamSecretsCache,
+                teamSecretsCacheIdProvider = RedisTeamSecretsIdProvider(),
+                healthRepoLimit,
+                healthCacheLimit
+            )
+            healthRouting(healthService)
         }
     }
     environment.monitor.subscribe(ApplicationStopping) {

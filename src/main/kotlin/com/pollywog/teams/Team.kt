@@ -11,7 +11,8 @@ data class Team(
     val tokenMetadata: Map<String, TokenMetadata> = emptyMap(),
     val name: String,
     val secretsUsed: Map<String, Boolean> = emptyMap(),
-    val createdAt: Instant
+    val createdAt: Instant,
+    val lastEditedBy: String = ""
 ) {
     fun checkAuthorized(userId: String, requiredRole: TeamRole) {
         val foundRole = members[userId]?.role ?: throw UnauthorizedActionException("You don't have this level of team access")

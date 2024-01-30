@@ -9,5 +9,6 @@ data class Prompt(
     val currentVersionId: String? = null,
     val currentABTestId: String? = null,
     val currentABTest: PromptABTest? = null,
-    val parameters: List<String> = emptyList()
+    val parameters: List<String> = emptyList(),
+    val lastEditedBy: String = ""
 )

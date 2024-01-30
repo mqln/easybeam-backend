@@ -9,5 +9,6 @@ data class PromptVersion(
     val config: PromptConfig,
     val configId: String,
     val averageReviewScore: Double? = null,
-    val reviewCount: Double? = null
+    val reviewCount: Double? = null,
+    val lastEditedBy: String = ""
 )

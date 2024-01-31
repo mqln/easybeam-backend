@@ -234,7 +234,6 @@ class PromptService(
         duration: Double,
         ipAddress: String,
         tokensUsed: Int,
-        providerId: String,
     ) = coroutineScope {
         launch {
             updatePromptData(preparedChat.prompt, teamId, promptId)
@@ -250,7 +249,6 @@ class PromptService(
                 duration = duration,
                 ipAddress = ipAddress,
                 tokensUsed = tokensUsed,
-                providerId = providerId
             )
         }
         launch {
@@ -274,7 +272,6 @@ class PromptService(
         duration: Double,
         ipAddress: String,
         tokensUsed: Int,
-        providerId: String,
     ) {
         val promptLog = PromptLog(
             filledPrompt = preparedChat.filledPrompt,
@@ -290,7 +287,6 @@ class PromptService(
             duration = duration,
             ipAddress = ipAddress,
             tokensUsed = tokensUsed,
-            providerId = providerId
         )
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, null)
 
@@ -326,7 +322,6 @@ class PromptService(
             preparedChat = preparedChat,
             duration = duration.toDouble(DurationUnit.MILLISECONDS),
             ipAddress = ipAddress,
-            providerId = preparedChat.configId,
             tokensUsed = output.tokensUsed
         )
         return ProcessedChat(
@@ -362,7 +357,6 @@ class PromptService(
                 preparedChat = preparedChat,
                 duration = duration,
                 ipAddress = ipAddress,
-                providerId = "",
                 tokensUsed = 0
             )
         }

@@ -18,5 +18,4 @@ data class PromptLog(
     val duration: Double,
     val ipAddress: String,
     val tokensUsed: Int,
-    val providerId: String,
 )

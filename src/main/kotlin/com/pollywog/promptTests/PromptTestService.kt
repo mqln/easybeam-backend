@@ -71,7 +71,7 @@ class PromptTestService(
 
         var finalUpdate: PromptTestRun? = null
         result.collect {
-            finalUpdate = updatedTestRun.copy(result = it.content)
+            finalUpdate = updatedTestRun.copy(result = it.message.content)
             promptTestRunRepo.set(testRunRepoId, finalUpdate!!)
         }
         return finalUpdate!!

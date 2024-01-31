@@ -37,26 +37,43 @@ class OpenAIChatProcessor : ChatProcessor {
 
     override suspend fun processChat(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
-    ): ChatInput {
+    ): ChatProcessorOutput {
         val token = secrets["token"] ?: throw UnauthorizedActionException("Missing secret 'token'")
         val openAI = OpenAI(token = token, timeout = Timeout(socket = 60.seconds))
         val request = request(filledPrompt, messages, config)
         val result = openAI.chatCompletion(request)
-        return ChatInput(content = (result.choices[0].message.content ?: ""), role = ChatInputRole.AI)
+        return ChatProcessorOutput(
+            message = ChatInput(
+                content = (result.choices[0].message.content ?: ""), role = ChatInputRole.AI
+            ), tokensUsed = result.usage?.totalTokens ?: 0
+        )
     }
+
+    data class AccumulatedResponse(
+        val content: String, val totalTokens: Int
+    )
 
     override suspend fun processChatFlow(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
-    ): Flow<ChatInput> {
+    ): Flow<ChatProcessorOutput> {
         val token = secrets["token"] ?: throw UnauthorizedActionException("Missing secret 'token'")
         val openAI = OpenAI(token = token, timeout = Timeout(socket = 60.seconds))
         val request = request(filledPrompt, messages, config)
-        return openAI.chatCompletions(request).scan("") { accumulatedContent, chatCompletion ->
-            accumulatedContent + (chatCompletion.choices[0].delta.content ?: "")
-        }.map { accumulatedContent ->
-            ChatInput(content = accumulatedContent, role = ChatInputRole.AI)
+
+        return openAI.chatCompletions(request).scan(AccumulatedResponse("", 0)) { accumulated, chatCompletion ->
+            AccumulatedResponse(
+                content = accumulated.content + (chatCompletion.choices[0].delta.content ?: ""),
+                totalTokens = accumulated.totalTokens + (chatCompletion.usage?.totalTokens ?: 0)
+            )
+        }.map { accumulatedResponse ->
+            ChatProcessorOutput(
+                message = ChatInput(
+                    content = accumulatedResponse.content, role = ChatInputRole.AI
+                ), tokensUsed = accumulatedResponse.totalTokens
+            )
         }
     }
+
 }
 
 private fun ChatInputRole.openAIRole(): ChatRole {

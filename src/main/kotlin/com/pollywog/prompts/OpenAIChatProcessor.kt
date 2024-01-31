@@ -37,12 +37,18 @@ class OpenAIChatProcessor : ChatProcessor {
 
     override suspend fun processChat(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
-    ): ChatInput {
+    ): ChatProcessorOutput {
         val token = secrets["token"] ?: throw UnauthorizedActionException("Missing secret 'token'")
         val openAI = OpenAI(token = token, timeout = Timeout(socket = 60.seconds))
         val request = request(filledPrompt, messages, config)
         val result = openAI.chatCompletion(request)
-        return ChatInput(content = (result.choices[0].message.content ?: ""), role = ChatInputRole.AI)
+        return ChatProcessorOutput(
+            message = ChatInput(
+                content = (result.choices[0].message.content ?: ""),
+                role = ChatInputRole.AI
+            ),
+            tokensUsed = result.usage?.totalTokens?.toDouble() ?: 0.0
+        )
     }
 
     override suspend fun processChatFlow(

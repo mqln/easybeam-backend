@@ -233,6 +233,8 @@ class PromptService(
         userId: String?,
         duration: Double,
         ipAddress: String,
+        tokensUsed: Double,
+        providerId: String,
     ) = coroutineScope {
         launch {
             updatePromptData(preparedChat.prompt, teamId, promptId)
@@ -246,7 +248,9 @@ class PromptService(
                 promptId = promptId,
                 preparedChat = preparedChat,
                 duration = duration,
-                ipAddress = ipAddress
+                ipAddress = ipAddress,
+                tokensUsed = tokensUsed,
+                providerId = providerId
             )
         }
         launch {
@@ -268,7 +272,9 @@ class PromptService(
         preparedChat: PreparedChat,
         userId: String?,
         duration: Double,
-        ipAddress: String
+        ipAddress: String,
+        tokensUsed: Double,
+        providerId: String,
     ) {
         val promptLog = PromptLog(
             filledPrompt = preparedChat.filledPrompt,
@@ -282,7 +288,9 @@ class PromptService(
             config = preparedChat.config,
             configId = preparedChat.configId,
             duration = duration,
-            ipAddress = ipAddress
+            ipAddress = ipAddress,
+            tokensUsed = tokensUsed,
+            providerId = providerId
         )
         val servedPromptRepoId = servedPromptRepoIdProvider.id(teamId, null)
 
@@ -300,10 +308,10 @@ class PromptService(
         preprocessedData: PreprocessedData?
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId, preprocessedData)
-        val response: ChatInput
+        val output: ChatProcessorOutput
         val processStart = System.currentTimeMillis()
         val duration = measureTime {
-            response = preparedChat.chatProcessor.processChat(
+            output = preparedChat.chatProcessor.processChat(
                 preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
             )
         }
@@ -313,14 +321,16 @@ class PromptService(
             userId = userId,
             messages = messages,
             teamId = teamId,
-            response = response,
+            response = output.message,
             promptId = promptId,
             preparedChat = preparedChat,
             duration = duration.toDouble(DurationUnit.MILLISECONDS),
             ipAddress = ipAddress,
+            providerId = preparedChat.configId,
+            tokensUsed = output.tokensUsed
         )
         return ProcessedChat(
-            message = response, chatId = preparedChat.chatId
+            message = output.message, chatId = preparedChat.chatId
         )
     }
 
@@ -351,7 +361,9 @@ class PromptService(
                 promptId = promptId,
                 preparedChat = preparedChat,
                 duration = duration,
-                ipAddress = ipAddress
+                ipAddress = ipAddress,
+                providerId = "",
+                tokensUsed = 0.0
             )
         }
 

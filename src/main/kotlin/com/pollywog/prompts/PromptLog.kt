@@ -16,5 +16,7 @@ data class PromptLog(
     val userId: String?,
     val createdAt: Instant,
     val duration: Double,
-    val ipAddress: String
+    val ipAddress: String,
+    val tokensUsed: Double,
+    val providerId: String,
 )

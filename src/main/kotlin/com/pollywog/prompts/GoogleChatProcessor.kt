@@ -45,7 +45,7 @@ class GoogleChatProcessor : ChatProcessor {
 
     override suspend fun processChat(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
-    ): ChatInput {
+    ): ChatProcessorOutput {
         val keyJson = secrets["jsonKey"] ?: throw UnauthorizedActionException("Credentials missing for google vertex")
         val jsonElement = Json.parseToJsonElement(keyJson)
         val projectId = jsonElement.jsonObject["project_id"]?.jsonPrimitive?.content ?: throw Exception("Project ID not found")
@@ -87,7 +87,11 @@ class GoogleChatProcessor : ChatProcessor {
                 )
             }
         val body = response.body<Response>()
-        return body.predictions.first().candidates.map { ChatInput(content = it.content, role = it.role()) }.first()
+        val message = body.predictions.first().candidates.map { ChatInput(content = it.content, role = it.role()) }.first()
+            return ChatProcessorOutput(
+                message = message,
+                tokensUsed = 0.0
+            )
     }
 
     @OptIn(InternalAPI::class, ExperimentalCoroutinesApi::class)

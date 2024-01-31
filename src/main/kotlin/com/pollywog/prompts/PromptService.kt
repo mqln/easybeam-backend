@@ -233,7 +233,7 @@ class PromptService(
         userId: String?,
         duration: Double,
         ipAddress: String,
-        tokensUsed: Double,
+        tokensUsed: Int,
         providerId: String,
     ) = coroutineScope {
         launch {
@@ -273,7 +273,7 @@ class PromptService(
         userId: String?,
         duration: Double,
         ipAddress: String,
-        tokensUsed: Double,
+        tokensUsed: Int,
         providerId: String,
     ) {
         val promptLog = PromptLog(
@@ -355,21 +355,21 @@ class PromptService(
         if (responses.isNotEmpty()) {
             cleanUp(
                 userId = userId,
-                messages = messages + responses,
+                messages = messages + responses.map { it.message },
                 teamId = teamId,
-                response = responses.last(),
+                response = responses.last().message,
                 promptId = promptId,
                 preparedChat = preparedChat,
                 duration = duration,
                 ipAddress = ipAddress,
                 providerId = "",
-                tokensUsed = 0.0
+                tokensUsed = 0
             )
         }
 
         return flowOf(*responses.toTypedArray()).map {
             ProcessedChat(
-                message = it,
+                message = it.message,
                 chatId = preparedChat.chatId,
             )
         }

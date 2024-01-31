@@ -90,14 +90,14 @@ class GoogleChatProcessor : ChatProcessor {
         val message = body.predictions.first().candidates.map { ChatInput(content = it.content, role = it.role()) }.first()
             return ChatProcessorOutput(
                 message = message,
-                tokensUsed = 0.0
+                tokensUsed = 0
             )
     }
 
     @OptIn(InternalAPI::class, ExperimentalCoroutinesApi::class)
     override suspend fun processChatFlow(
         filledPrompt: String, messages: List<ChatInput>, config: PromptConfig, secrets: Map<String, String>
-    ): Flow<ChatInput> {
+    ): Flow<ChatProcessorOutput> {
         val keyJson = secrets["jsonKey"] ?: throw UnauthorizedActionException("Credentials missing for google vertex")
         val jsonElement = Json.parseToJsonElement(keyJson)
         val projectId = jsonElement.jsonObject["project_id"]?.jsonPrimitive?.content ?: throw Exception("Project ID not found")
@@ -161,7 +161,7 @@ class GoogleChatProcessor : ChatProcessor {
                         if (chatInput == EndOfStreamMarker) {
                             close() // Close the flow when end-of-stream marker is detected
                         } else {
-                            send(chatInput) // Send regular chatInput
+                            send(ChatProcessorOutput(message = chatInput, tokensUsed = 0)) // Send regular chatInput
                         }
                     }
 

@@ -77,12 +77,12 @@ data class SubscriptionEvent(
     val priceId: String,
     val dailyRequests: Double,
     val seats: Double,
-    val priceUSD: Double,
-    val name: String,
+    val priceUSD: Double = 0.0,
+    val name: String = "",
     val trialDays: Int? = null,
     val gracePeriodEndsAt: Instant? = null,
-    val hasPayment: Boolean,
-    val willRenew: Boolean
+    val hasPayment: Boolean = false,
+    val willRenew: Boolean = false
 )
 
 @Serializable

@@ -1,11 +1,9 @@
 package com.pollywog.common
 
 import org.slf4j.Logger
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-
-// Extension function for Logger
+import com.google.gson.Gson
 fun Logger.infoJson(message: String, data: Map<String, Any?>) {
-    val jsonData = Json.encodeToJsonElement(data).toString()
+    val gson = Gson()
+    val jsonData = gson.toJson(data)
     this.info("$message $jsonData")
 }

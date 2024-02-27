@@ -2,6 +2,7 @@ package com.pollywog.prompts
 
 import com.pollywog.common.Cache
 import com.pollywog.common.Repository
+import com.pollywog.common.infoJson
 import com.pollywog.errors.NotFoundException
 import com.pollywog.errors.TooManyRequestsException
 import com.pollywog.teams.*
@@ -34,7 +35,8 @@ data class PreparedChat(
     val configId: String,
     val prompt: Prompt,
     val teamSubscription: TeamSubscription,
-    val chatProcessor: ChatProcessor
+    val chatProcessor: ChatProcessor,
+    val processingTime: Long
 )
 
 data class PreprocessedData(
@@ -173,8 +175,6 @@ class PromptService(
         val teamSubscription = teamSubscriptionAsync.await()
         val secrets = secretsAsync.await()
         val fetchDuration = System.currentTimeMillis() - fetchStart
-
-        logger.info("Data fetching took $fetchDuration ms")
         val updateSubscription = processRateLimitWindow(teamSubscription)
             ?: throw TooManyRequestsException("Too many requests. Consider upgrading your subscription")
         val (currentVersion, currentVersionId) = preprocessedData?.let {
@@ -197,7 +197,8 @@ class PromptService(
             configId = currentVersion.configId,
             prompt = prompt,
             teamSubscription = updateSubscription,
-            chatProcessor = processor
+            chatProcessor = processor,
+            processingTime = fetchDuration
         )
     }
 
@@ -318,7 +319,15 @@ class PromptService(
             )
         }
         val processDuration = System.currentTimeMillis() - processStart
-        logger.info("Chat processing took $processDuration ms")
+        logger.infoJson(
+            "Processed prompt", mapOf(
+                "preparationDuration" to preparedChat.processingTime,
+                "processDuration" to processDuration,
+                "subscription" to preparedChat.teamSubscription.currentEvent?.name,
+                "teamId" to teamId,
+                "userId" to userId
+            )
+        )
         cleanUp(
             userId = userId,
             messages = messages,
@@ -352,6 +361,16 @@ class PromptService(
                 preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
             ).toList()
         }
+
+        logger.infoJson(
+            "Processed prompt for stream", mapOf(
+                "preparationDuration" to preparedChat.processingTime,
+                "processDuration" to duration,
+                "subscription" to preparedChat.teamSubscription.currentEvent?.name,
+                "teamId" to teamId,
+                "userId" to userId
+            )
+        )
 
         if (responses.isNotEmpty()) {
             cleanUp(

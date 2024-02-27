@@ -2,6 +2,7 @@ package com.pollywog.prompts
 
 import com.pollywog.common.Cache
 import com.pollywog.common.Repository
+import com.pollywog.errors.NotFoundException
 import com.pollywog.errors.TooManyRequestsException
 import com.pollywog.teams.*
 import kotlinx.coroutines.*
@@ -142,12 +143,6 @@ class PromptService(
         preprocessedData: PreprocessedData?
     ): PreparedChat = coroutineScope {
         val fetchStart = System.currentTimeMillis()
-        val promptAsync = preprocessedData?.let { CompletableDeferred(it.prompt) } ?: fetchAndCache(
-            cache = promptCache,
-            repository = promptRepository,
-            cacheId = promptCacheIdProvider.id(teamId, promptId),
-            repoId = promptRepoIdProvider.id(teamId, promptId),
-        )
 
         val secretsAsync = fetchAndCache(
             cache = teamSecretsCache,
@@ -163,7 +158,18 @@ class PromptService(
             repoId = teamSubscriptionRepoIdProvider.id(teamId),
         )
 
-        val prompt = promptAsync.await()
+        val prompt: Prompt
+        try {
+            val promptAsync = preprocessedData?.let { CompletableDeferred(it.prompt) } ?: fetchAndCache(
+                cache = promptCache,
+                repository = promptRepository,
+                cacheId = promptCacheIdProvider.id(teamId, promptId),
+                repoId = promptRepoIdProvider.id(teamId, promptId),
+            )
+            prompt = promptAsync.await()
+        } catch (e: Exception) {
+            throw NotFoundException("Prompt $promptId not found")
+        }
         val teamSubscription = teamSubscriptionAsync.await()
         val secrets = secretsAsync.await()
         val fetchDuration = System.currentTimeMillis() - fetchStart

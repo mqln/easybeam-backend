@@ -56,6 +56,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.mockk:mockk:1.13.9")
     implementation("io.ktor:ktor-server-openapi:$ktor_version")
+    implementation("ch.qos.logback:logback-classic:$logback_version")
 }
 
 ktor {

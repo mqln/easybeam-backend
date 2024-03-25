@@ -15,4 +15,5 @@ data class PromptVersion(
     val lastEditedBy: String = "",
     val createdAt: Instant = Clock.System.now(),
     val modifiedAt: Instant = Clock.System.now(),
+    val retries: Int = 3,
 )

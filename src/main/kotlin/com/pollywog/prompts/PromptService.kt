@@ -311,37 +311,53 @@ class PromptService(
         preprocessedData: PreprocessedData?
     ): ProcessedChat {
         val preparedChat = prepareChat(teamId, promptId, parameters, chatId, preprocessedData)
-        val output: ChatProcessorOutput
+        var output: ChatProcessorOutput
         val processStart = System.currentTimeMillis()
-        val duration = measureTime {
-            output = preparedChat.chatProcessor.processChat(
-                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
-            )
+        var lastException: Exception? = null
+        var processDuration: Long
+
+        repeat(3) { attempt ->
+            try {
+                val duration = measureTime {
+                    output = preparedChat.chatProcessor.processChat(
+                        preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
+                    )
+                }
+                processDuration = System.currentTimeMillis() - processStart
+
+                logger.infoJson(
+                    "Processed prompt", mapOf(
+                        "preparationDuration" to preparedChat.processingTime,
+                        "processDuration" to processDuration,
+                        "subscription" to preparedChat.teamSubscription.currentEvent?.name,
+                        "teamId" to teamId,
+                        "userId" to userId
+                    )
+                )
+
+                cleanUp(
+                    userId = userId,
+                    messages = messages,
+                    teamId = teamId,
+                    response = output.message,
+                    promptId = promptId,
+                    preparedChat = preparedChat,
+                    duration = duration.toDouble(DurationUnit.MILLISECONDS),
+                    ipAddress = ipAddress,
+                    tokensUsed = output.tokensUsed
+                )
+                return ProcessedChat(
+                    message = output.message, chatId = preparedChat.chatId
+                )
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt == 2) { // Last attempt
+                    throw e
+                }
+            }
         }
-        val processDuration = System.currentTimeMillis() - processStart
-        logger.infoJson(
-            "Processed prompt", mapOf(
-                "preparationDuration" to preparedChat.processingTime,
-                "processDuration" to processDuration,
-                "subscription" to preparedChat.teamSubscription.currentEvent?.name,
-                "teamId" to teamId,
-                "userId" to userId
-            )
-        )
-        cleanUp(
-            userId = userId,
-            messages = messages,
-            teamId = teamId,
-            response = output.message,
-            promptId = promptId,
-            preparedChat = preparedChat,
-            duration = duration.toDouble(DurationUnit.MILLISECONDS),
-            ipAddress = ipAddress,
-            tokensUsed = output.tokensUsed
-        )
-        return ProcessedChat(
-            message = output.message, chatId = preparedChat.chatId
-        )
+
+        throw lastException ?: Exception("Unknown error in processChat")
     }
 
     override suspend fun processChatFlow(
@@ -354,45 +370,57 @@ class PromptService(
         ipAddress: String,
         preprocessedData: PreprocessedData?
     ): Flow<ProcessedChat> {
-        val preparedChat = prepareChat(teamId, promptId, parameters, chatId, preprocessedData)
+        var lastException: Exception? = null
+        repeat(3) { attempt ->
+            try {
+                val preparedChat = prepareChat(teamId, promptId, parameters, chatId, preprocessedData)
+                val (responses, duration) = measureTimeWithResult {
+                    preparedChat.chatProcessor.processChatFlow(
+                        preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
+                    ).toList()
+                }
 
-        val (responses, duration) = measureTimeWithResult {
-            preparedChat.chatProcessor.processChatFlow(
-                preparedChat.filledPrompt, messages, preparedChat.config, preparedChat.secrets
-            ).toList()
+                logger.infoJson(
+                    "Processed prompt for stream", mapOf(
+                        "preparationDuration" to preparedChat.processingTime,
+                        "processDuration" to duration,
+                        "subscription" to preparedChat.teamSubscription.currentEvent?.name,
+                        "teamId" to teamId,
+                        "userId" to userId
+                    )
+                )
+
+                if (responses.isNotEmpty()) {
+                    cleanUp(
+                        userId = userId,
+                        messages = messages + responses.map { it.message },
+                        teamId = teamId,
+                        response = responses.last().message,
+                        promptId = promptId,
+                        preparedChat = preparedChat,
+                        duration = duration,
+                        ipAddress = ipAddress,
+                        tokensUsed = 0
+                    )
+                }
+
+                return flowOf(*responses.toTypedArray()).map {
+                    ProcessedChat(
+                        message = it.message,
+                        chatId = preparedChat.chatId,
+                    )
+                }
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt == 2) { // Last attempt
+                    throw e
+                }
+            }
         }
 
-        logger.infoJson(
-            "Processed prompt for stream", mapOf(
-                "preparationDuration" to preparedChat.processingTime,
-                "processDuration" to duration,
-                "subscription" to preparedChat.teamSubscription.currentEvent?.name,
-                "teamId" to teamId,
-                "userId" to userId
-            )
-        )
-
-        if (responses.isNotEmpty()) {
-            cleanUp(
-                userId = userId,
-                messages = messages + responses.map { it.message },
-                teamId = teamId,
-                response = responses.last().message,
-                promptId = promptId,
-                preparedChat = preparedChat,
-                duration = duration,
-                ipAddress = ipAddress,
-                tokensUsed = 0
-            )
-        }
-
-        return flowOf(*responses.toTypedArray()).map {
-            ProcessedChat(
-                message = it.message,
-                chatId = preparedChat.chatId,
-            )
-        }
+        throw lastException ?: Exception("Unknown error in processChatFlow")
     }
+
 
     private inline fun <T> measureTimeWithResult(block: () -> T): Pair<T, Double> {
         var result: T

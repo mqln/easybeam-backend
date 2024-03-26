@@ -34,6 +34,8 @@ fun Application.configureRouting() {
     val healthTeamId = healthConfig.property("teamId").getString()
     val healthRepoLimit = healthConfig.property("repoLimit").getString().toLong().milliseconds
     val healthCacheLimit = healthConfig.property("cacheLimit").getString().toLong().milliseconds
+    val stripeConfig = config.config("stripe")
+    val stripeKey = stripeConfig.property("key").getString()
 
     val jedisPool = jedisPool()
     val promptCache =
@@ -70,7 +72,8 @@ fun Application.configureRouting() {
                 teamSubscriptionRepository = FirestoreRepository(serializer = TeamSubscription.serializer()),
                 teamSubscriptionRepoIdProvider = FirestoreTeamSubscriptionIdProvider(),
                 teamSubscriptionCache = teamSubscriptionCache,
-                teamSubscriptionCacheIdProvider = RedisTeamSubscriptionIdProvider()
+                teamSubscriptionCacheIdProvider = RedisTeamSubscriptionIdProvider(),
+                usageReporter = StripeUsageReporter(stripeKey)
             )
             promptRouting(promptService = promptService)
 

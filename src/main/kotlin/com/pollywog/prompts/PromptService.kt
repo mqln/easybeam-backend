@@ -4,7 +4,6 @@ import com.pollywog.common.Cache
 import com.pollywog.common.Repository
 import com.pollywog.common.infoJson
 import com.pollywog.errors.NotFoundException
-import com.pollywog.errors.TooManyRequestsException
 import com.pollywog.teams.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -86,7 +85,8 @@ class PromptService(
     private val chatIdProvider: ChatIdProviding,
     private val abTestRepository: Repository<PromptABTest>,
     private val abTestIdProvider: PromptABTestIdProviding,
-    private val processorFactory: ChatProcessorFactoryType
+    private val processorFactory: ChatProcessorFactoryType,
+    private val usageReporter: UsageReporter
 ) : PromptServiceInterface {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -176,7 +176,6 @@ class PromptService(
         val secrets = secretsAsync.await()
         val fetchDuration = System.currentTimeMillis() - fetchStart
         val updateSubscription = processRateLimitWindow(teamSubscription)
-            ?: throw TooManyRequestsException("Too many requests. Consider upgrading your subscription")
         val (currentVersion, currentVersionId) = preprocessedData?.let {
             Pair(it.version, it.versionId)
         } ?: getCurrentVersion(prompt)
@@ -202,7 +201,7 @@ class PromptService(
         )
     }
 
-    private fun processRateLimitWindow(teamSubscription: TeamSubscription): TeamSubscription? {
+    internal fun processRateLimitWindow(teamSubscription: TeamSubscription): TeamSubscription {
         val rateLimit = teamSubscription.calculateRateLimitPerDay()
         val currentTime = Clock.System.now()
 
@@ -216,7 +215,19 @@ class PromptService(
         }.toMutableList()
 
         val recentUsage = validWindows.sumOf { it.requestCount }
-        if (recentUsage >= rateLimit && rateLimit > 0) return null
+        if (recentUsage >= rateLimit && rateLimit > 0) {
+            println("recentUsage $recentUsage")
+            val subscriptionId = teamSubscription.currentEvent?.subscriptionId
+            if (subscriptionId != null) {
+                println(subscriptionId)
+                usageReporter.reportUsage(subscriptionId, 1)
+            } else {
+                println("error")
+                logger.error("Subscription id not found in current event!")
+            }
+        } else {
+            println("not logging overage")
+        }
 
         val currentWindowIndex =
             validWindows.indexOfFirst { it.startTime.toRoundedString() == startTime.toRoundedString() }

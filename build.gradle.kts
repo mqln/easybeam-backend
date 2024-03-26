@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+    implementation("com.stripe:stripe-java:24.0.0")
     implementation("io.ktor:ktor-server-core-jvm")
     implementation("io.ktor:ktor-server-netty-jvm")
     implementation("org.slf4j:jul-to-slf4j:1.7.32")

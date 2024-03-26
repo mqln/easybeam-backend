@@ -7,20 +7,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TokenWindow(val startTime: Instant, val requestCount: Double)
 
-@Serializable
-enum class SubscriptionType {
-    @SerialName("free")
-    FREE,
-
-    @SerialName("light")
-    LIGHT,
-
-    @SerialName("full")
-    FULL,
-
-    @SerialName("corporate")
-    CORPORATE
-}
 
 @Serializable
 enum class SubscriptionInterval {
@@ -67,7 +53,6 @@ enum class SubscriptionStatus {
 @Serializable
 data class SubscriptionEvent(
     val status: SubscriptionStatus,
-    val subscriptionType: SubscriptionType,
     val currentPeriodStart: Instant,
     val currentPeriodEnd: Instant,
     val createdAt: Instant,
